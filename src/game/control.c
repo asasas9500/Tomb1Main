@@ -3,6 +3,7 @@
 #include "game/demo.h"
 #include "game/effects.h"
 #include "game/game.h"
+#include "game/hair.h"
 #include "game/inv.h"
 #include "game/lara.h"
 #include "game/savegame.h"
@@ -120,6 +121,10 @@ int32_t ControlPhase(int32_t nframes, int demo_mode)
         }
 
         LaraControl(0);
+#ifdef T1M_FEAT_HAIR
+        HairControl(0);
+#endif
+
         CalculateCamera();
         SoundEffects();
         ++SaveGame[0].timer;
