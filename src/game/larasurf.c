@@ -227,7 +227,9 @@ void LaraAsSurfTread(ITEM_INFO* item, COLL_INFO* coll)
     }
 
     if (Input & IN_LOOK) {
-        Camera.type = CAM_LOOK;
+        if (Camera.type != CAM_REALLY_FIXED) {
+            Camera.type = CAM_LOOK;
+        }
         if (Input & IN_LEFT && Lara.head_y_rot > -MAX_HEAD_ROTATION_SURF) {
             Lara.head_y_rot -= HEAD_TURN_SURF;
         } else if (

@@ -11,6 +11,14 @@
 #include "config.h"
 #include "util.h"
 
+static void SwitchToCombatCamera()
+{
+    if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK
+        && Camera.type != CAM_REALLY_FIXED) {
+        Camera.type = CAM_COMBAT;
+    }
+}
+
 void LaraGun()
 {
     if (Lara.left_arm.flash_gun > 0) {
@@ -89,16 +97,12 @@ void LaraGun()
         case LGT_PISTOLS:
         case LGT_MAGNUMS:
         case LGT_UZIS:
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             draw_pistols(Lara.gun_type);
             break;
 
         case LGT_SHOTGUN:
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             draw_shotgun();
             break;
         }
@@ -127,9 +131,7 @@ void LaraGun()
                 Lara.mesh_ptrs[LM_HEAD] =
                     Meshes[Objects[O_UZI].mesh_index + LM_HEAD];
             }
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             PistolHandler(Lara.gun_type);
             break;
 
@@ -138,9 +140,7 @@ void LaraGun()
                 Lara.mesh_ptrs[LM_HEAD] =
                     Meshes[Objects[O_UZI].mesh_index + LM_HEAD];
             }
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             PistolHandler(Lara.gun_type);
             break;
 
@@ -149,9 +149,7 @@ void LaraGun()
                 Lara.mesh_ptrs[LM_HEAD] =
                     Meshes[Objects[O_UZI].mesh_index + LM_HEAD];
             }
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             PistolHandler(Lara.gun_type);
             break;
 
@@ -160,9 +158,7 @@ void LaraGun()
                 Lara.mesh_ptrs[LM_HEAD] =
                     Meshes[Objects[O_UZI].mesh_index + LM_HEAD];
             }
-            if (Camera.type != CAM_CINEMATIC && Camera.type != CAM_LOOK) {
-                Camera.type = CAM_COMBAT;
-            }
+            SwitchToCombatCamera();
             RifleHandler(LGT_SHOTGUN);
             break;
         }

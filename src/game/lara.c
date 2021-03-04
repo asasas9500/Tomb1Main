@@ -14,7 +14,9 @@
 #ifdef T1M_FEAT_GAMEPLAY
 void LookLeftRight()
 {
-    Camera.type = CAM_LOOK;
+    if (Camera.type != CAM_REALLY_FIXED) {
+        Camera.type = CAM_LOOK;
+    }
     if (Input & IN_LEFT) {
         Input -= IN_LEFT;
         if (Lara.head_y_rot > -MAX_HEAD_ROTATION) {
@@ -33,7 +35,9 @@ void LookLeftRight()
 
 void LookUpDown()
 {
-    Camera.type = CAM_LOOK;
+    if (Camera.type != CAM_REALLY_FIXED) {
+        Camera.type = CAM_LOOK;
+    }
     if (Input & IN_FORWARD) {
         Input -= IN_FORWARD;
         if (Lara.head_x_rot > MIN_HEAD_TILT_LOOK) {
@@ -253,7 +257,9 @@ void LaraAsStop(ITEM_INFO* item, COLL_INFO* coll)
 
     item->goal_anim_state = AS_STOP;
     if (Input & IN_LOOK) {
-        Camera.type = CAM_LOOK;
+        if (Camera.type != CAM_REALLY_FIXED) {
+            Camera.type = CAM_LOOK;
+        }
         if ((Input & IN_LEFT) && Lara.head_y_rot > -MAX_HEAD_ROTATION) {
             Lara.head_y_rot -= HEAD_TURN / 2;
         } else if ((Input & IN_RIGHT) && Lara.head_y_rot < MAX_HEAD_ROTATION) {

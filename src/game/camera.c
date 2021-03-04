@@ -516,6 +516,16 @@ void CalculateCamera()
         Camera.underwater = 0;
     }
 
+#ifdef T1M_FEAT_GAMEPLAY
+    // offer ability to set camera to a fixed position
+    if (Camera.type == CAM_REALLY_FIXED) {
+        TRACE(
+            "%d %d %d -> %d %d %d", Camera.pos.x, Camera.pos.y, Camera.pos.z,
+            Camera.target.x, Camera.target.y, Camera.target.z);
+        return;
+    }
+#endif
+
     if (Camera.type == CAM_CINEMATIC) {
         InGameCinematicCamera();
         return;

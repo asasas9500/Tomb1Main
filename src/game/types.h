@@ -14,6 +14,9 @@ typedef enum {
     CAM_COMBAT = 3,
     CAM_CINEMATIC = 4,
     CAM_HEAVY = 5,
+#ifdef T1M_FEAT_GAMEPLAY
+    CAM_REALLY_FIXED = 6,
+#endif
 } CAMERA_TYPE;
 
 typedef enum {

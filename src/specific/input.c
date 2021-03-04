@@ -7,6 +7,9 @@
 #include "util.h"
 #include <dinput.h>
 
+#ifdef T1M_FEAT_GAMEPLAY
+static int32_t camera_cooldown = 0;
+#endif
 #ifdef T1M_FEAT_INPUT
 static int32_t medipack_cooldown = 0;
 #endif
@@ -165,6 +168,19 @@ void S_UpdateInput()
                 WinVidSpinMessageLoop();
             } while (KeyData->keymap[DIK_F4]);
         }
+
+#ifdef T1M_FEAT_GAMEPLAY
+        if (camera_cooldown > 0) {
+            --camera_cooldown;
+        } else if (KeyData->keymap[DIK_F1]) {
+            camera_cooldown = 15; // half a second
+            if (Camera.type == CAM_REALLY_FIXED) {
+                Camera.type = CAM_CHASE;
+            } else {
+                Camera.type = CAM_REALLY_FIXED;
+            }
+        }
+#endif
 
         if (KeyData->keymap[DIK_F2]) {
             AppSettings ^= 4u;

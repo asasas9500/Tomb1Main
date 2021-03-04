@@ -541,6 +541,13 @@ int16_t GetHeight(FLOOR_INFO* floor, int32_t x, int32_t y, int32_t z)
 
 void RefreshCamera(int16_t type, int16_t* data)
 {
+#ifdef T1M_FEAT_GAMEPLAY
+    // offer ability to set camera to a fixed position
+    if (Camera.type == CAM_REALLY_FIXED) {
+        return;
+    }
+#endif
+
     int16_t trigger;
     int16_t target_ok = 2;
     do {

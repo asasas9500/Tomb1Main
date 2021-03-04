@@ -254,6 +254,7 @@ extern int32_t OverlapCount;
 
 #ifdef T1M_FEAT_GAMEPLAY
 extern int16_t StoredLaraHealth;
+extern int8_t StopCameraCalculations;
 #endif
 
 #ifdef T1M_FEAT_UI
