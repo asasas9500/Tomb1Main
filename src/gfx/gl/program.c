@@ -51,7 +51,11 @@ void GFX_GL_Program_AttachShader(
     glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compile_status);
     if (compile_status != GL_TRUE) {
         GLsizei info_log_size = 4096;
+#ifdef _MSC_VER
+        char info_log[4096];
+#else
         char info_log[info_log_size];
+#endif
         glGetShaderInfoLog(shader_id, info_log_size, &info_log_size, info_log);
         if (info_log[0]) {
             Shell_ExitSystemFmt("Shader compilation failed:\n%s", info_log);
@@ -73,7 +77,11 @@ void GFX_GL_Program_Link(GFX_GL_Program *program)
     glGetProgramiv(program->id, GL_LINK_STATUS, &linkStatus);
     if (!linkStatus) {
         GLsizei info_log_size = 4096;
+#ifdef _MSC_VER
+        char info_log[4096];
+#else
         char info_log[info_log_size];
+#endif
         glGetProgramInfoLog(
             program->id, info_log_size, &info_log_size, info_log);
         if (info_log[0]) {
