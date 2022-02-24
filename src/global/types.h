@@ -55,9 +55,9 @@ typedef enum GAME_OBJECT_ID {
     O_LARSON = 27,
     O_PIERRE = 28,
     O_SKATEBOARD = 29,
-    O_MERCENARY1 = 30,
-    O_MERCENARY2 = 31,
-    O_MERCENARY3 = 32,
+    O_SKATEKID = 30,
+    O_COWBOY = 31,
+    O_BALDY = 32,
     O_NATLA = 33,
     O_ABORTION = 34, // a.k.a. Adam, Torso or Evil Natla
     O_FALLING_BLOCK = 35,
@@ -1000,6 +1000,7 @@ typedef enum GAMEFLOW_SEQUENCE_TYPE {
     GFS_FLIP_MAP,
     GFS_REMOVE_GUNS,
     GFS_REMOVE_SCIONS,
+    GFS_GIVE_ITEM,
     GFS_PLAY_SYNCED_AUDIO,
     GFS_MESH_SWAP,
     GFS_FIX_PYRAMID_SECRET_TRIGGER,
@@ -1012,6 +1013,7 @@ typedef enum GAME_STRING_ID {
     GS_HEADING_ITEMS,
 
     GS_PASSPORT_SELECT_LEVEL,
+    GS_PASSPORT_RESTART_LEVEL,
     GS_PASSPORT_SELECT_MODE,
     GS_PASSPORT_MODE_NEW_GAME,
     GS_PASSPORT_MODE_NEW_GAME_PLUS,
@@ -1063,10 +1065,11 @@ typedef enum GAME_STRING_ID {
     GS_KEYMAP_CAMERA_RIGHT,
     GS_KEYMAP_CAMERA_RESET,
 
-    GS_STATS_TIME_TAKEN_FMT,
-    GS_STATS_SECRETS_FMT,
-    GS_STATS_PICKUPS_FMT,
     GS_STATS_KILLS_FMT,
+    GS_STATS_PICKUPS_FMT,
+    GS_STATS_SECRETS_FMT,
+    GS_STATS_DEATHS_FMT,
+    GS_STATS_TIME_TAKEN_FMT,
 
     GS_PAUSE_PAUSED,
     GS_PAUSE_EXIT_TO_TITLE,
@@ -1421,8 +1424,8 @@ typedef struct LARA_INFO {
     int16_t hit_frame;
     int16_t hit_direction;
     int16_t air;
-    int16_t dive_count;
-    int16_t death_count;
+    int16_t dive_timer;
+    int16_t death_timer;
     int16_t current_active;
     int16_t spaz_effect_count;
     FX_INFO *spaz_effect;
@@ -1447,7 +1450,19 @@ typedef struct LARA_INFO {
     LOT_INFO LOT;
 } LARA_INFO;
 
+typedef struct GAME_STATS {
+    uint32_t timer;
+    uint32_t death_count;
+    uint32_t kill_count;
+    uint16_t secret_flags;
+    uint8_t pickup_count;
+    uint32_t max_kill_count;
+    uint16_t max_secret_count;
+    uint8_t max_pickup_count;
+} GAME_STATS;
+
 typedef struct START_INFO {
+    int32_t lara_hitpoints;
     uint16_t pistol_ammo;
     uint16_t magnum_ammo;
     uint16_t uzi_ammo;
@@ -1470,14 +1485,17 @@ typedef struct START_INFO {
     } flags;
 } START_INFO;
 
+typedef struct END_INFO {
+    GAME_STATS stats;
+} END_INFO;
+
 typedef struct GAME_INFO {
     START_INFO *start;
-    uint32_t timer;
-    uint32_t kills;
-    uint16_t secrets;
-    uint8_t pickups;
+    END_INFO *end;
+    GAME_STATS stats; // always for current level
     uint8_t bonus_flag;
-    char savegame_buffer[MAX_SAVEGAME_BUFFER];
+    int32_t current_save_slot;
+    bool death_counter_supported;
 } GAME_INFO;
 
 typedef struct CREATURE_INFO {

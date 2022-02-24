@@ -30,7 +30,6 @@ typedef struct GAMEFLOW_LEVEL {
     char *puzzle3;
     char *puzzle4;
     int8_t demo;
-    int16_t secrets;
     GAMEFLOW_SEQUENCE *sequence;
     struct {
         bool override;
@@ -53,7 +52,8 @@ typedef struct GAMEFLOW {
     int32_t last_level_num;
     int32_t title_level_num;
     int32_t level_count;
-    char *save_game_fmt;
+    char *savegame_fmt_legacy;
+    char *savegame_fmt_bson;
     int8_t has_demo;
     int32_t demo_delay;
     int8_t enable_game_modes;

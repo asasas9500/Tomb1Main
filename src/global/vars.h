@@ -29,7 +29,6 @@ extern SHADOW_INFO g_ShadowInfo;
 
 extern bool g_ModeLock;
 
-extern int32_t g_NoInputCount;
 extern bool g_IDelay;
 extern int32_t g_IDCount;
 extern int32_t g_OptionSelected;
@@ -52,7 +51,6 @@ extern int32_t g_SaveCounter;
 extern int16_t g_CurrentLevel;
 extern uint32_t *g_DemoData;
 extern bool g_LevelComplete;
-extern bool g_ResetFlag;
 extern bool g_ChunkyFlag;
 extern int32_t g_OverlayFlag;
 extern int32_t g_HeightType;
@@ -122,9 +120,7 @@ extern int32_t g_SpriteInfoCount;
 extern int32_t g_SpriteCount;
 extern int32_t g_OverlapCount;
 
-extern REQUEST_INFO g_LoadSaveGameRequester;
-
-extern int16_t g_StoredLaraHealth;
+extern REQUEST_INFO g_LoadSavegameRequester;
 
 extern int16_t g_InvMode;
 extern int32_t g_InvExtraData[8];

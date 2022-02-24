@@ -111,7 +111,7 @@ static void Overlay_OnFPSTextRemoval(const TEXTSTRING *textstring);
 static void Overlay_BarSetupHealth()
 {
     m_HealthBar.type = BT_LARA_HEALTH;
-    m_HealthBar.value = LARA_HITPOINTS;
+    m_HealthBar.value = 0;
     m_HealthBar.max_value = LARA_HITPOINTS;
     m_HealthBar.show_mode = g_Config.healthbar_showing_mode;
     m_HealthBar.show = false;
@@ -441,8 +441,8 @@ void Overlay_DrawAmmoInfo()
 void Overlay_DrawPickups()
 {
     static int32_t old_game_timer = 0;
-    int16_t time = g_GameInfo.timer - old_game_timer;
-    old_game_timer = g_GameInfo.timer;
+    int16_t time = g_GameInfo.stats.timer - old_game_timer;
+    old_game_timer = g_GameInfo.stats.timer;
 
     if (time > 0 && time < 60) {
         int32_t sprite_height =

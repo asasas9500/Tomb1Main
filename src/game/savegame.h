@@ -4,12 +4,23 @@
 
 #include <stdint.h>
 
-void InitialiseStartInfo();
-void ModifyStartInfo(int32_t level_num);
-void CreateStartInfo(int level_num);
+// Loading a saved game is divided into two phases. First, the game reads the
+// savegame file contents to look for the level number. The rest of the save
+// data is stored in a special buffer in the g_GameInfo. Then the engine
+// continues to execute the normal game flow and loads the specified level.
+// Second phase occurs after everything finishes loading, e.g. items,
+// creatures, triggers etc., and is what actually sets Lara's health, creatures
+// status, triggers, inventory etc.
 
-int16_t SaveGame_LoadSaveBufferFromFile(GAME_INFO *save, int32_t slot);
-void SaveGame_ApplySaveBuffer(GAME_INFO *save);
+#include "game/savegame_common.h"
 
-bool SaveGame_SaveToFile(GAME_INFO *save, int32_t slot);
-void SaveGame_ScanSavedGames();
+void Savegame_InitStartEndInfo();
+
+int32_t Savegame_GetLevelNumber(int32_t slot_num);
+
+bool Savegame_Load(int32_t slot_num, GAME_INFO *game_info);
+bool Savegame_Save(int32_t slot_num, GAME_INFO *game_info);
+bool Savegame_UpdateDeathCounters(int32_t slot_num, GAME_INFO *game_info);
+
+void Savegame_ScanSavedGames();
+void Savegame_Shutdown();

@@ -1,13 +1,52 @@
-## [Unreleased](https://github.com/rr-/Tomb1Main/compare/2.4...master)
-- fixed detail levels text flashing with any option change
+## [Unreleased](https://github.com/rr-/Tomb1Main/compare/2.6.4...master)
+- ...
 
+## [2.6.4](https://github.com/rr-/Tomb1Main/compare/2.6.3...2.6.4) - 2022-02-20
+- fixed crash when loading a legacy save and saving on a new slot (#442, regression from 2.6)
+
+## [2.6.3](https://github.com/rr-/Tomb1Main/compare/2.6.2...2.6.3) - 2022-02-18
+- fixed croc and rats breaking saves after a flipmap (#441, regression from 2.6)
+
+## [2.6.2](https://github.com/rr-/Tomb1Main/compare/2.6.1...2.6.2) - 2022-02-17
+- fixed equipping gun after starting a demo (#440, regression from 2.6)
+
+## [2.6.1](https://github.com/rr-/Tomb1Main/compare/2.6...2.6.1) - 2022-02-16
+- fixed equipping gun after starting the game (#439, regression from 2.6)
+
+## [2.6](https://github.com/rr-/Tomb1Main/compare/2.5...2.6) - 2022-02-16
+- added deaths counter (#388, requires new saves)
+- added total pickups and kills per level to the compass and end level stats screens (#362)
+- added new, more resilient savegame format (#277)
+- added ability to give Lara various items in the gameflow file
+- added restart level to passport menu on death (#48)
+- changed Lara's starting health to be configurable; useful for no damage runs (#365)
+- changed saves to be put in the saves/ directory (#87)
+- changed fade animations to block the main menu inventory ring like in PS1 (#379)
+- changed fade animations to be FPS-independent
+- changed fade animations to run faster in the main menu
+- changed compass text order to be consistent with level stats (#415)
+- fixed detail levels text flashing with any option change (#380)
+- fixed main menu demo playing even when the passport is open (#410, regression from 2.1)
+- fixed broken poses at the end of cinematics (#390)
+- fixed libavcodec-related memory leaks (#389)
+- fixed crash in custom levels that call `level_stats` after playing an FMV (#393, regression from 2.5)
+- fixed calling `level_stats` for different levels (#336, requires new saves)
+- fixed sounds playing after demo mode ends when game is minimized (#399)
+- fixed glitched floor in the Natla cutscene (#405)
+- fixed gun pickups disappearing in rare circumstances on save load (#406)
+- fixed equipping gun after loading a legacy save (#427, regression from 2.4)
+- fixed empty mutant shells in Unfinished Business spawning Lara's hips (#250)
+- fixed rare audio distance glitch (#421)
+- fixed Lara not getting her pistols in Atlantis if the player finishes Natla's Mines without picking up any gun (#424)
+- fixed broken dart ricochet effect (#429)
 
 ## [2.5](https://github.com/rr-/Tomb1Main/compare/2.4...2.5) - 2022-01-31
 - added CHANGELOG.md
-- added fade animations
-- added a vsync option
-- fixed certain inputs skipping too many things
-- fixed a memory leak in the audio sampler
+- added ability to skip cinematics with the Action key
+- added fade animations (#363)
+- added a vsync option (#364)
+- fixed certain inputs skipping too many things (#359)
+- fixed a memory leak in the audio sampler (#369)
 
 
 ## [2.4](https://github.com/rr-/Tomb1Main/compare/2.3...2.4) - 2022-01-19

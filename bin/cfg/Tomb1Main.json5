@@ -1,4 +1,7 @@
 {
+    // Sets starting Lara's health value (max is 1000).
+    "start_lara_hitpoints": 1000,
+
     // Disables healing Lara between level reloads (for No Heal challenge runs).
     "disable_healing_between_levels": false,
 
@@ -13,6 +16,10 @@
 
     // Removes all shotgun and shotgun shells pickups.
     "disable_shotgun": false,
+
+    // Enables showing deaths counter in the compass and in the level stats.
+    // Death count is updated in the currently loaded save as soon as Lara dies.
+    "enable_deaths_counter": true,
 
     // Enables showing healthbar for the active enemy.
     "enable_enemy_healthbar": true,

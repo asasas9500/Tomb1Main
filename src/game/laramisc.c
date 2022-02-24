@@ -12,6 +12,7 @@
 #include "game/items.h"
 #include "game/lot.h"
 #include "game/music.h"
+#include "game/savegame.h"
 #include "game/sound.h"
 #include "global/const.h"
 #include "global/types.h"
@@ -65,7 +66,7 @@ void LaraControl(int16_t item_num)
         g_Lara.hit_frame = 0;
         g_Lara.hit_direction = -1;
         g_Lara.air = LARA_AIR;
-        g_Lara.death_count = 0;
+        g_Lara.death_timer = 0;
         g_Lara.mesh_effects = 0;
         LaraInitialiseMeshes(g_CurrentLevel);
     }
@@ -105,7 +106,7 @@ void LaraControl(int16_t item_num)
             item->pos.x, item->pos.y, item->pos.z, item->room_number);
         if (wh != NO_HEIGHT && ABS(wh - item->pos.y) < STEP_L) {
             g_Lara.water_status = LWS_SURFACE;
-            g_Lara.dive_count = DIVE_COUNT + 1;
+            g_Lara.dive_timer = DIVE_WAIT + 1;
             item->current_anim_state = AS_SURFTREAD;
             item->goal_anim_state = AS_SURFTREAD;
             item->anim_number = AA_SURFTREAD;
@@ -157,10 +158,15 @@ void LaraControl(int16_t item_num)
 
     if (item->hit_points <= 0) {
         item->hit_points = -1;
-        if (!g_Lara.death_count) {
+        if (!g_Lara.death_timer) {
             Music_Stop();
+            g_GameInfo.end[g_CurrentLevel].stats.death_count++;
+            if (g_GameInfo.current_save_slot != -1) {
+                Savegame_UpdateDeathCounters(
+                    g_GameInfo.current_save_slot, &g_GameInfo);
+            }
         }
-        g_Lara.death_count++;
+        g_Lara.death_timer++;
         // make sure the enemy healthbar is no longer rendered. If g_Lara later
         // is resurrected with DOZY, she should no longer aim at the target.
         g_Lara.target = NULL;
@@ -211,7 +217,7 @@ void LaraControl(int16_t item_num)
 
     case LWS_CHEAT:
         item->hit_points = LARA_HITPOINTS;
-        g_Lara.death_count = 0;
+        g_Lara.death_timer = 0;
         LaraUnderWater(item, &coll);
         if (g_Input.slow && !g_Input.look && !g_Input.fly_cheat) {
             int16_t wh = GetWaterHeight(
@@ -401,9 +407,7 @@ void UseItem(int16_t object_num)
             return;
         }
         g_LaraItem->hit_points += LARA_HITPOINTS / 2;
-        if (g_LaraItem->hit_points > LARA_HITPOINTS) {
-            g_LaraItem->hit_points = LARA_HITPOINTS;
-        }
+        CLAMPG(g_LaraItem->hit_points, LARA_HITPOINTS);
         Inv_RemoveItem(O_MEDI_ITEM);
         Sound_Effect(SFX_MENU_MEDI, NULL, SPM_ALWAYS);
         break;
@@ -415,9 +419,7 @@ void UseItem(int16_t object_num)
             return;
         }
         g_LaraItem->hit_points = g_LaraItem->hit_points + LARA_HITPOINTS;
-        if (g_LaraItem->hit_points > LARA_HITPOINTS) {
-            g_LaraItem->hit_points = LARA_HITPOINTS;
-        }
+        CLAMPG(g_LaraItem->hit_points, LARA_HITPOINTS);
         Inv_RemoveItem(O_BIGMEDI_ITEM);
         Sound_Effect(SFX_MENU_MEDI, NULL, SPM_ALWAYS);
         break;
@@ -432,17 +434,20 @@ void ControlLaraExtra(int16_t item_num)
 void InitialiseLaraLoad(int16_t item_num)
 {
     g_Lara.item_number = item_num;
-    g_LaraItem = &g_Items[item_num];
+    if (item_num == NO_ITEM) {
+        g_LaraItem = NULL;
+    } else {
+        g_LaraItem = &g_Items[item_num];
+    }
 }
 
 void InitialiseLara()
 {
+    START_INFO *start = &g_GameInfo.start[g_CurrentLevel];
+
     g_LaraItem->collidable = 0;
     g_LaraItem->data = &g_Lara;
-    g_LaraItem->hit_points = LARA_HITPOINTS;
-    if (g_Config.disable_healing_between_levels) {
-        g_LaraItem->hit_points = g_StoredLaraHealth;
-    }
+    g_LaraItem->hit_points = start->lara_hitpoints;
 
     g_Lara.air = LARA_AIR;
     g_Lara.torso_y_rot = 0;
@@ -455,7 +460,7 @@ void InitialiseLara()
     g_Lara.mesh_effects = 0;
     g_Lara.hit_frame = 0;
     g_Lara.hit_direction = 0;
-    g_Lara.death_count = 0;
+    g_Lara.death_timer = 0;
     g_Lara.target = NULL;
     g_Lara.spaz_effect = NULL;
     g_Lara.spaz_effect_count = 0;

@@ -220,10 +220,6 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
 
         Input_Update();
 
-        if (g_ResetFlag) {
-            return GF_NOP_BREAK;
-        }
-
         if (level_type == GFL_DEMO) {
             if (g_Input.any) {
                 return GF_EXIT_TO_TITLE;
@@ -233,8 +229,8 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
             }
         }
 
-        if (g_Lara.death_count > DEATH_WAIT
-            || (g_Lara.death_count > DEATH_WAIT_MIN && g_Input.any
+        if (g_Lara.death_timer > DEATH_WAIT
+            || (g_Lara.death_timer > DEATH_WAIT_MIN && g_Input.any
                 && !g_Input.fly_cheat)
             || g_OverlayFlag == 2) {
             if (level_type == GFL_DEMO) {
@@ -253,7 +249,7 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
 
         if ((g_InputDB.option || g_Input.save || g_Input.load
              || g_OverlayFlag <= 0)
-            && !g_Lara.death_count) {
+            && !g_Lara.death_timer) {
             if (g_OverlayFlag > 0) {
                 if (g_Input.load) {
                     g_OverlayFlag = -1;
@@ -278,7 +274,7 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
             }
         }
 
-        if (!g_Lara.death_count && g_InputDB.pause) {
+        if (!g_Lara.death_timer && g_InputDB.pause) {
             if (Control_Pause()) {
                 return GF_EXIT_TO_TITLE;
             }
@@ -309,21 +305,8 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
 
         CalculateCamera();
         Sound_UpdateEffects();
-        g_GameInfo.timer++;
+        g_GameInfo.stats.timer++;
         Overlay_BarHealthTimerTick();
-
-        if (g_Config.disable_healing_between_levels) {
-            int8_t lara_found = 0;
-            for (int i = 0; i < g_LevelItemCount; i++) {
-                if (g_Items[i].object_number == O_LARA) {
-                    lara_found = 1;
-                }
-            }
-            if (lara_found) {
-                g_StoredLaraHealth =
-                    g_LaraItem ? g_LaraItem->hit_points : LARA_HITPOINTS;
-            }
-        }
 
         m_FrameCount -= 0x10000;
     }
@@ -744,10 +727,10 @@ void TestTriggers(int16_t *data, int32_t heavy)
             break;
 
         case TO_SECRET:
-            if ((g_GameInfo.secrets & (1 << value))) {
+            if ((g_GameInfo.stats.secret_flags & (1 << value))) {
                 break;
             }
-            g_GameInfo.secrets |= 1 << value;
+            g_GameInfo.stats.secret_flags |= 1 << value;
             Music_Play(13);
             break;
         }

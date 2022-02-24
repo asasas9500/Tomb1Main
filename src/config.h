@@ -44,6 +44,7 @@ typedef struct {
     bool disable_magnums;
     bool disable_uzis;
     bool disable_shotgun;
+    bool enable_deaths_counter;
     bool enable_enemy_healthbar;
     bool enable_enhanced_look;
     bool enable_numeric_keys;
@@ -84,6 +85,7 @@ typedef struct {
     float brightness;
     bool enable_round_shadow;
     bool enable_3d_pickups;
+    int32_t start_lara_hitpoints;
 
     struct {
         int32_t layout;
