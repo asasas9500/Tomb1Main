@@ -694,8 +694,8 @@ struct json_value_s *bson_parse_ex(
     state.dom += sizeof(struct json_value_s);
     bson_parse_object_value(&state, value);
 
-    assert(state.dom == allocation + state.dom_size);
-    assert(state.data == allocation + state.dom_size + state.data_size);
+    assert(state.dom == (char *)allocation + state.dom_size);
+    assert(state.data == (char *)allocation + state.dom_size + state.data_size);
 
     return value;
 }
