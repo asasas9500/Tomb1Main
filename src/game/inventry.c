@@ -1,13 +1,14 @@
 #include "game/inv.h"
 
-#include "game/clock.h"
 #include "3dsystem/3d_gen.h"
 #include "3dsystem/matrix.h"
 #include "config.h"
+#include "game/clock.h"
 #include "game/draw.h"
 #include "game/gameflow.h"
 #include "game/input.h"
 #include "game/lara.h"
+#include "game/music.h"
 #include "game/option.h"
 #include "game/output.h"
 #include "game/overlay.h"
@@ -158,8 +159,11 @@ int32_t Display_Inventory(int inv_mode)
     }
     Construct_Inventory();
 
-    Sound_StopAmbientSounds();
-    Sound_StopAllSamples();
+    if (g_Config.disable_music_in_inventory && g_InvMode != INV_TITLE_MODE) {
+        Music_Pause();
+        Sound_StopAmbientSounds();
+        Sound_StopAllSamples();
+    }
 
     switch (g_InvMode) {
     case INV_DEATH_MODE:
@@ -270,7 +274,7 @@ int32_t Display_Inventory(int inv_mode)
         g_Camera.number_frames = m_InvNFrames;
 
         if (g_Config.enable_timer_in_inventory) {
-            g_GameInfo.stats.timer += m_InvNFrames / 2;
+            g_GameInfo.current[g_CurrentLevel].stats.timer += m_InvNFrames / 2;
         }
 
         if (ring.rotating) {
@@ -617,7 +621,8 @@ int32_t Display_Inventory(int inv_mode)
                 && (g_InvMode == INV_LOAD_MODE /* f6 menu */
                     || g_InvMode == INV_DEATH_MODE /* Lara died */
                     || (g_InvMode == INV_GAME_MODE /* esc menu */
-                        && g_InvExtraData[0] != 1 /* but not the save page */
+                        && g_InvExtraData[IED_PAGE_NUM]
+                            != PASSPORT_PAGE_2 /* but not the save page */
                         )
                     || g_CurrentLevel == g_GameFlow.gym_level_num /* Gym */
                     )) {
@@ -663,6 +668,10 @@ int32_t Display_Inventory(int inv_mode)
         m_VersionText = NULL;
     }
 
+    if (g_Config.disable_music_in_inventory && g_InvMode != INV_TITLE_MODE) {
+        Music_Unpause();
+    }
+
     if (start_demo) {
         no_input_count = 0;
         start_demo = false;
@@ -672,12 +681,22 @@ int32_t Display_Inventory(int inv_mode)
     switch (g_InvChosen) {
     case O_PASSPORT_OPTION:
         if (g_InvMode == INV_TITLE_MODE) {
-            if (g_InvExtraData[0] == 0) {
+            if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SHOW_SAVES) {
                 // page 1: load game
-                return GF_START_SAVED_GAME | g_InvExtraData[1];
-            } else if (g_InvExtraData[0] == 1) {
+                return GF_START_SAVED_GAME | g_InvExtraData[IED_SAVEGAME_NUM];
+            } else if (
+                g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SELECT_LEVEL) {
+                // page 1: select level
+                // TODO Placeholder for select level. Do new game.
+                Savegame_InitStartCurrentInfo();
+                return GF_START_GAME | g_InvExtraData[IED_LEVEL_NUM];
+            } else if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_2) {
                 // page 2: new game
-                switch (g_InvExtraData[1]) {
+                switch (g_InvExtraData[IED_SAVEGAME_NUM]) {
                 case 0:
                     g_GameInfo.bonus_flag = 0;
                     break;
@@ -691,31 +710,51 @@ int32_t Display_Inventory(int inv_mode)
                     g_GameInfo.bonus_flag = GBF_JAPANESE | GBF_NGPLUS;
                     break;
                 }
-                Savegame_InitStartEndInfo();
+                Savegame_InitStartCurrentInfo();
                 return GF_START_GAME | g_GameFlow.first_level_num;
             } else {
                 // page 3: exit game
                 return GF_EXIT_GAME;
             }
         } else if (g_InvMode == INV_DEATH_MODE) {
-            if (g_InvExtraData[0] == 0) {
+            if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SHOW_SAVES) {
                 // page 1: load game
-                return GF_START_SAVED_GAME | g_InvExtraData[1];
-            } else if (g_InvExtraData[0] == 1) {
+                return GF_START_SAVED_GAME | g_InvExtraData[IED_SAVEGAME_NUM];
+            } else if (
+                g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SELECT_LEVEL) {
+                // page 1: select level
+                // TODO Placeholder for select level. Do new game.
+                Savegame_InitStartCurrentInfo();
+                return GF_START_GAME | g_InvExtraData[IED_LEVEL_NUM];
+            } else if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_2) {
                 // page 2: restart level
-                return GF_START_GAME | g_CurrentLevel;
+                return GF_RESTART_GAME | g_CurrentLevel;
             } else {
                 // page 3: exit game
                 return GF_EXIT_TO_TITLE;
             }
         } else {
-            if (g_InvExtraData[0] == 0) {
+            if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SHOW_SAVES) {
                 // page 1: load game
-                return GF_START_SAVED_GAME | g_InvExtraData[1];
-            } else if (g_InvExtraData[0] == 1) {
+                return GF_START_SAVED_GAME | g_InvExtraData[IED_SAVEGAME_NUM];
+            } else if (
+                g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+                && g_InvExtraData[IED_PASSPORT_MODE]
+                    == PASSPORT_MODE_SELECT_LEVEL) {
+                // page 1: select level
+                // TODO Placeholder for select level. Do new game.
+                Savegame_InitStartCurrentInfo();
+                return GF_START_GAME | g_InvExtraData[IED_LEVEL_NUM];
+            } else if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_2) {
                 // page 1: save game, or new game in gym
                 if (g_CurrentLevel == g_GameFlow.gym_level_num) {
-                    switch (g_InvExtraData[1]) {
+                    switch (g_InvExtraData[IED_SAVEGAME_NUM]) {
                     case 0:
                         g_GameInfo.bonus_flag = 0;
                         break;
@@ -729,10 +768,11 @@ int32_t Display_Inventory(int inv_mode)
                         g_GameInfo.bonus_flag = GBF_JAPANESE | GBF_NGPLUS;
                         break;
                     }
-                    Savegame_InitStartEndInfo();
+                    Savegame_InitStartCurrentInfo();
                     return GF_START_GAME | g_GameFlow.first_level_num;
                 } else {
-                    Savegame_Save(g_InvExtraData[1], &g_GameInfo);
+                    Savegame_Save(
+                        g_InvExtraData[IED_SAVEGAME_NUM], &g_GameInfo);
                     Settings_Write();
                     return GF_NOP;
                 }
@@ -743,38 +783,38 @@ int32_t Display_Inventory(int inv_mode)
         }
 
     case O_PHOTO_OPTION:
-        g_InvExtraData[1] = 0;
+        g_InvExtraData[IED_SAVEGAME_NUM] = 0;
         return GF_START_GAME | g_GameFlow.gym_level_num;
 
     case O_GUN_OPTION:
-        UseItem(O_GUN_OPTION);
+        Lara_UseItem(O_GUN_OPTION);
         break;
 
     case O_SHOTGUN_OPTION:
-        UseItem(O_SHOTGUN_OPTION);
+        Lara_UseItem(O_SHOTGUN_OPTION);
         break;
 
     case O_MAGNUM_OPTION:
-        UseItem(O_MAGNUM_OPTION);
+        Lara_UseItem(O_MAGNUM_OPTION);
         break;
 
     case O_UZI_OPTION:
-        UseItem(O_UZI_OPTION);
+        Lara_UseItem(O_UZI_OPTION);
         break;
 
     case O_MEDI_OPTION:
-        UseItem(O_MEDI_OPTION);
+        Lara_UseItem(O_MEDI_OPTION);
         break;
 
     case O_BIGMEDI_OPTION:
-        UseItem(O_BIGMEDI_OPTION);
+        Lara_UseItem(O_BIGMEDI_OPTION);
         break;
     }
 
     return GF_NOP;
 }
 
-void Construct_Inventory()
+void Construct_Inventory(void)
 {
     g_PhdLeft = ViewPort_GetMinX();
     g_PhdTop = ViewPort_GetMinY();

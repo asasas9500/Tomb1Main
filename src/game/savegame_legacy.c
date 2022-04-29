@@ -38,7 +38,7 @@ typedef struct SAVEGAME_LEGACY_ITEM_STATS {
 static int m_SGBufPos = 0;
 static char *m_SGBufPtr = NULL;
 
-static bool Savegame_Legacy_NeedsEvilLaraFix();
+static bool Savegame_Legacy_NeedsBaconLaraFix(char *buffer);
 
 static void Savegame_Legacy_Reset(char *buffer);
 static void Savegame_Legacy_Skip(int size);
@@ -47,24 +47,25 @@ static void Savegame_Legacy_Read(void *pointer, int size);
 static void Savegame_Legacy_ReadArm(LARA_ARM *arm);
 static void Savegame_Legacy_ReadLara(LARA_INFO *lara);
 static void Savegame_Legacy_ReadLOT(LOT_INFO *lot);
+static void Savegame_Legacy_SetCurrentPosition(int level_num);
 
 static void Savegame_Legacy_Write(void *pointer, int size);
 static void Savegame_Legacy_WriteArm(LARA_ARM *arm);
 static void Savegame_Legacy_WriteLara(LARA_INFO *lara);
 static void Savegame_Legacy_WriteLOT(LOT_INFO *lot);
 
-static bool Savegame_Legacy_NeedsEvilLaraFix(char *buffer)
+static bool Savegame_Legacy_NeedsBaconLaraFix(char *buffer)
 {
     // Heuristic for issue #261.
-    // Tomb1Main enables save_flags for Evil Lara, but OG TombATI does not. As
+    // Tomb1Main enables save_flags for Bacon Lara, but OG TombATI does not. As
     // a consequence, Atlantis saves made with OG TombATI (which includes the
     // ones available for download on Stella's website) have different layout
     // than the saves made with Tomb1Main. This was discovered after it was too
     // late to make a backwards incompatible change. At the same time, enabling
-    // save_flags for Evil Lara is desirable, as not doing this causes her to
+    // save_flags for Bacon Lara is desirable, as not doing this causes her to
     // freeze when the player reloads a save made in her room. This function is
     // used to determine whether the save about to be loaded includes
-    // save_flags for Evil Lara or not. Since savegames only contain very
+    // save_flags for Bacon Lara or not. Since savegames only contain very
     // concise information, we must make an educated guess here.
 
     assert(buffer);
@@ -99,6 +100,8 @@ static bool Savegame_Legacy_NeedsEvilLaraFix(char *buffer)
     Savegame_Legacy_Skip(sizeof(int32_t)); // flipmap status
     Savegame_Legacy_Skip(MAX_FLIP_MAPS * sizeof(int8_t)); // flipmap table
     Savegame_Legacy_Skip(g_NumberCameras * sizeof(int16_t)); // cameras
+
+    Savegame_PreprocessItems();
 
     for (int i = 0; i < g_LevelItemCount; i++) {
         ITEM_INFO *item = &g_Items[i];
@@ -352,6 +355,15 @@ static void Savegame_Legacy_ReadLOT(LOT_INFO *lot)
     Savegame_Legacy_Read(&lot->target, sizeof(PHD_VECTOR));
 }
 
+static void Savegame_Legacy_SetCurrentPosition(int level_num)
+{
+    for (int i = 0; i < g_GameFlow.level_count; i++) {
+        if (g_GameFlow.levels[i].level_type == GFL_CURRENT) {
+            g_GameInfo.current[g_CurrentLevel] = g_GameInfo.current[i];
+        }
+    }
+}
+
 char *Savegame_Legacy_GetSaveFileName(int32_t slot)
 {
     size_t out_size =
@@ -367,7 +379,7 @@ bool Savegame_Legacy_FillInfo(MYFILE *fp, SAVEGAME_INFO *info)
 
     char title[SAVEGAME_LEGACY_TITLE_SIZE];
     File_Read(title, sizeof(char), SAVEGAME_LEGACY_TITLE_SIZE, fp);
-    info->level_title = Memory_Dup(title);
+    info->level_title = Memory_DupStr(title);
 
     int32_t counter;
     File_Read(&counter, sizeof(int32_t), 1, fp);
@@ -408,52 +420,59 @@ bool Savegame_Legacy_LoadFromFile(MYFILE *fp, GAME_INFO *game_info)
     File_Seek(fp, 0, FILE_SEEK_SET);
     File_Read(buffer, sizeof(char), File_Size(fp), fp);
 
-    bool skip_reading_evil_lara = Savegame_Legacy_NeedsEvilLaraFix(buffer);
-    if (skip_reading_evil_lara) {
-        LOG_INFO("Enabling Evil Lara savegame fix");
+    bool skip_reading_bacon_lara = Savegame_Legacy_NeedsBaconLaraFix(buffer);
+    if (skip_reading_bacon_lara) {
+        LOG_INFO("Enabling Bacon Lara savegame fix");
     }
 
     Savegame_Legacy_Reset(buffer);
     Savegame_Legacy_Skip(SAVEGAME_LEGACY_TITLE_SIZE); // level title
     Savegame_Legacy_Skip(sizeof(int32_t)); // save counter
 
-    assert(game_info->start);
+    assert(game_info->current);
     for (int i = 0; i < g_GameFlow.level_count; i++) {
-        START_INFO *start = &game_info->start[i];
-        Savegame_Legacy_Read(&start->pistol_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Read(&start->magnum_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Read(&start->uzi_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Read(&start->shotgun_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Read(&start->num_medis, sizeof(uint8_t));
-        Savegame_Legacy_Read(&start->num_big_medis, sizeof(uint8_t));
-        Savegame_Legacy_Read(&start->num_scions, sizeof(uint8_t));
-        Savegame_Legacy_Read(&start->gun_status, sizeof(int8_t));
-        Savegame_Legacy_Read(&start->gun_type, sizeof(int8_t));
+        RESUME_INFO *current = &game_info->current[i];
+        Savegame_Legacy_Read(&current->pistol_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Read(&current->magnum_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Read(&current->uzi_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Read(&current->shotgun_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Read(&current->num_medis, sizeof(uint8_t));
+        Savegame_Legacy_Read(&current->num_big_medis, sizeof(uint8_t));
+        Savegame_Legacy_Read(&current->num_scions, sizeof(uint8_t));
+        Savegame_Legacy_Read(&current->gun_status, sizeof(int8_t));
+        Savegame_Legacy_Read(&current->gun_type, sizeof(int8_t));
         uint16_t flags;
         Savegame_Legacy_Read(&flags, sizeof(uint16_t));
-        start->flags.available = flags & 1 ? 1 : 0;
-        start->flags.got_pistols = flags & 2 ? 1 : 0;
-        start->flags.got_magnums = flags & 4 ? 1 : 0;
-        start->flags.got_uzis = flags & 8 ? 1 : 0;
-        start->flags.got_shotgun = flags & 16 ? 1 : 0;
-        start->flags.costume = flags & 32 ? 1 : 0;
+        current->flags.available = flags & 1 ? 1 : 0;
+        current->flags.got_pistols = flags & 2 ? 1 : 0;
+        current->flags.got_magnums = flags & 4 ? 1 : 0;
+        current->flags.got_uzis = flags & 8 ? 1 : 0;
+        current->flags.got_shotgun = flags & 16 ? 1 : 0;
+        current->flags.costume = flags & 32 ? 1 : 0;
+        // Start and current are the same for legacy saves.
+        memcpy(&game_info->start[i], current, sizeof(RESUME_INFO));
+        // Max Lara's starting HP for legacy saves instead of using current HP.
+        game_info->start[i].lara_hitpoints = LARA_HITPOINTS;
     }
 
-    Savegame_Legacy_Read(&game_info->stats.timer, sizeof(uint32_t));
-    Savegame_Legacy_Read(&game_info->stats.kill_count, sizeof(uint32_t));
-    Savegame_Legacy_Read(&game_info->stats.secret_flags, sizeof(uint16_t));
+    uint32_t temp_timer = 0;
+    uint32_t temp_kill_count = 0;
+    uint16_t temp_secret_flags = 0;
+    Savegame_Legacy_Read(&temp_timer, sizeof(uint32_t));
+    Savegame_Legacy_Read(&temp_kill_count, sizeof(uint32_t));
+    Savegame_Legacy_Read(&temp_secret_flags, sizeof(uint16_t));
     Savegame_Legacy_Read(&g_CurrentLevel, sizeof(uint16_t));
-    Savegame_Legacy_Read(&game_info->stats.pickup_count, sizeof(uint8_t));
+    game_info->current[g_CurrentLevel].stats.timer = temp_timer;
+    game_info->current[g_CurrentLevel].stats.kill_count = temp_kill_count;
+    game_info->current[g_CurrentLevel].stats.secret_flags = temp_secret_flags;
+    Savegame_Legacy_Read(
+        &game_info->current[g_CurrentLevel].stats.pickup_count,
+        sizeof(uint8_t));
     Savegame_Legacy_Read(&game_info->bonus_flag, sizeof(uint8_t));
 
-    Savegame_SetCurrentPosition(g_CurrentLevel);
-    for (int i = 0; i < g_GameFlow.level_count; i++) {
-        Savegame_ResetEndInfo(i);
-    }
     game_info->death_counter_supported = false;
-    game_info->end[g_CurrentLevel].stats = game_info->stats;
 
-    InitialiseLaraInventory(g_CurrentLevel);
+    Lara_InitialiseInventory(g_CurrentLevel);
     SAVEGAME_LEGACY_ITEM_STATS item_stats = { 0 };
     Savegame_Legacy_Read(&item_stats, sizeof(item_stats));
     Inv_AddItemNTimes(O_PICKUP_ITEM1, item_stats.num_pickup1);
@@ -510,8 +529,8 @@ bool Savegame_Legacy_LoadFromFile(MYFILE *fp, GAME_INFO *game_info)
         }
 
         if (obj->save_flags
-            && (item->object_number != O_EVIL_LARA
-                || !skip_reading_evil_lara)) {
+            && (item->object_number != O_BACON_LARA
+                || !skip_reading_bacon_lara)) {
             Savegame_Legacy_Read(&item->flags, sizeof(int16_t));
             Savegame_Legacy_Read(&item->timer, sizeof(int16_t));
 
@@ -574,33 +593,39 @@ void Savegame_Legacy_SaveToFile(MYFILE *fp, GAME_INFO *game_info)
     Savegame_Legacy_Write(title, SAVEGAME_LEGACY_TITLE_SIZE);
     Savegame_Legacy_Write(&g_SaveCounter, sizeof(int32_t));
 
-    assert(game_info->start);
+    assert(game_info->current);
     for (int i = 0; i < g_GameFlow.level_count; i++) {
-        START_INFO *start = &game_info->start[i];
-        Savegame_Legacy_Write(&start->pistol_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Write(&start->magnum_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Write(&start->uzi_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Write(&start->shotgun_ammo, sizeof(uint16_t));
-        Savegame_Legacy_Write(&start->num_medis, sizeof(uint8_t));
-        Savegame_Legacy_Write(&start->num_big_medis, sizeof(uint8_t));
-        Savegame_Legacy_Write(&start->num_scions, sizeof(uint8_t));
-        Savegame_Legacy_Write(&start->gun_status, sizeof(int8_t));
-        Savegame_Legacy_Write(&start->gun_type, sizeof(int8_t));
+        RESUME_INFO *current = &game_info->current[i];
+        Savegame_Legacy_Write(&current->pistol_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Write(&current->magnum_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Write(&current->uzi_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Write(&current->shotgun_ammo, sizeof(uint16_t));
+        Savegame_Legacy_Write(&current->num_medis, sizeof(uint8_t));
+        Savegame_Legacy_Write(&current->num_big_medis, sizeof(uint8_t));
+        Savegame_Legacy_Write(&current->num_scions, sizeof(uint8_t));
+        Savegame_Legacy_Write(&current->gun_status, sizeof(int8_t));
+        Savegame_Legacy_Write(&current->gun_type, sizeof(int8_t));
         uint16_t flags = 0;
-        flags |= start->flags.available ? 1 : 0;
-        flags |= start->flags.got_pistols ? 2 : 0;
-        flags |= start->flags.got_magnums ? 4 : 0;
-        flags |= start->flags.got_uzis ? 8 : 0;
-        flags |= start->flags.got_shotgun ? 16 : 0;
-        flags |= start->flags.costume ? 32 : 0;
+        flags |= current->flags.available ? 1 : 0;
+        flags |= current->flags.got_pistols ? 2 : 0;
+        flags |= current->flags.got_magnums ? 4 : 0;
+        flags |= current->flags.got_uzis ? 8 : 0;
+        flags |= current->flags.got_shotgun ? 16 : 0;
+        flags |= current->flags.costume ? 32 : 0;
         Savegame_Legacy_Write(&flags, sizeof(uint16_t));
     }
 
-    Savegame_Legacy_Write(&game_info->stats.timer, sizeof(uint32_t));
-    Savegame_Legacy_Write(&game_info->stats.kill_count, sizeof(uint32_t));
-    Savegame_Legacy_Write(&game_info->stats.secret_flags, sizeof(uint16_t));
+    Savegame_Legacy_Write(
+        &game_info->current[g_CurrentLevel].stats.timer, sizeof(uint32_t));
+    Savegame_Legacy_Write(
+        &game_info->current[g_CurrentLevel].stats.kill_count, sizeof(uint32_t));
+    Savegame_Legacy_Write(
+        &game_info->current[g_CurrentLevel].stats.secret_flags,
+        sizeof(uint16_t));
     Savegame_Legacy_Write(&g_CurrentLevel, sizeof(uint16_t));
-    Savegame_Legacy_Write(&game_info->stats.pickup_count, sizeof(uint8_t));
+    Savegame_Legacy_Write(
+        &game_info->current[g_CurrentLevel].stats.pickup_count,
+        sizeof(uint8_t));
     Savegame_Legacy_Write(&game_info->bonus_flag, sizeof(uint8_t));
 
     SAVEGAME_LEGACY_ITEM_STATS item_stats = {

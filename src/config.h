@@ -54,6 +54,7 @@ typedef struct {
     bool enable_tr3_sidesteps;
     bool enable_braid;
     bool enable_compass_stats;
+    bool enable_total_stats;
     bool enable_timer_in_inventory;
     bool enable_smooth_bars;
     bool enable_fade_effects;
@@ -79,13 +80,17 @@ typedef struct {
     bool disable_fmv;
     bool disable_cine;
     bool disable_music_in_menu;
+    bool disable_music_in_inventory;
     int32_t resolution_width;
     int32_t resolution_height;
     bool enable_xbox_one_controller;
     float brightness;
     bool enable_round_shadow;
     bool enable_3d_pickups;
+    bool enable_detailed_stats;
     int32_t start_lara_hitpoints;
+    bool walk_to_items;
+    bool disable_trex_collision;
 
     struct {
         int32_t layout;
@@ -113,4 +118,4 @@ typedef struct {
 extern CONFIG g_Config;
 
 bool Config_ReadFromJSON(const char *json);
-bool Config_Read();
+bool Config_Read(void);

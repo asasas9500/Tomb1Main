@@ -8,6 +8,8 @@
 #include "game/text.h"
 #include "specific/s_input.h"
 
+#include <stddef.h>
+
 #define TOP_Y -60
 #define BORDER 4
 #define HEADER_HEIGHT 25
@@ -24,8 +26,9 @@ static int32_t m_KeyChange = 0;
 static TEXTSTRING *m_Text[2] = { 0 };
 static TEXTSTRING *m_TextA[INPUT_KEY_NUMBER_OF] = { 0 };
 static TEXTSTRING *m_TextB[INPUT_KEY_NUMBER_OF] = { 0 };
+static TEXTSTRING *m_TextArrowLeft = NULL;
+static TEXTSTRING *m_TextArrowRight = NULL;
 
-static void Option_ControlShutdownText();
 static const TEXT_COLUMN_PLACEMENT CtrlTextPlacementNormal[] = {
     // left column
     { INPUT_KEY_UP, 0 },
@@ -34,6 +37,7 @@ static const TEXT_COLUMN_PLACEMENT CtrlTextPlacementNormal[] = {
     { INPUT_KEY_RIGHT, 0 },
     { INPUT_KEY_STEP_L, 0 },
     { INPUT_KEY_STEP_R, 0 },
+    { INPUT_KEY_LOOK, 0 },
     { INPUT_KEY_CAMERA_UP, 0 },
     { INPUT_KEY_CAMERA_DOWN, 0 },
     { INPUT_KEY_CAMERA_LEFT, 0 },
@@ -44,11 +48,12 @@ static const TEXT_COLUMN_PLACEMENT CtrlTextPlacementNormal[] = {
     { INPUT_KEY_JUMP, 1 },
     { INPUT_KEY_ACTION, 1 },
     { INPUT_KEY_DRAW, 1 },
-    { INPUT_KEY_LOOK, 1 },
     { INPUT_KEY_ROLL, 1 },
-    { -1, 1 },
     { INPUT_KEY_OPTION, 1 },
     { INPUT_KEY_PAUSE, 1 },
+    { -1, 1 },
+    { -1, 1 },
+    { -1, 1 },
     { -1, 1 },
     { -1, 1 },
     // end
@@ -63,6 +68,7 @@ static const TEXT_COLUMN_PLACEMENT CtrlTextPlacementCheats[] = {
     { INPUT_KEY_RIGHT, 0 },
     { INPUT_KEY_STEP_L, 0 },
     { INPUT_KEY_STEP_R, 0 },
+    { INPUT_KEY_LOOK, 0 },
     { INPUT_KEY_CAMERA_UP, 0 },
     { INPUT_KEY_CAMERA_DOWN, 0 },
     { INPUT_KEY_CAMERA_LEFT, 0 },
@@ -73,22 +79,23 @@ static const TEXT_COLUMN_PLACEMENT CtrlTextPlacementCheats[] = {
     { INPUT_KEY_JUMP, 1 },
     { INPUT_KEY_ACTION, 1 },
     { INPUT_KEY_DRAW, 1 },
-    { INPUT_KEY_LOOK, 1 },
     { INPUT_KEY_ROLL, 1 },
     { INPUT_KEY_OPTION, 1 },
     { INPUT_KEY_PAUSE, 1 },
+    { -1, 1 },
     { INPUT_KEY_FLY_CHEAT, 1 },
     { INPUT_KEY_ITEM_CHEAT, 1 },
     { INPUT_KEY_LEVEL_SKIP_CHEAT, 1 },
+    { INPUT_KEY_TURBO_CHEAT, 1 },
     // end
     { -1, -1 },
 };
 
-static void Option_ControlInitText();
-static void Option_ControlUpdateText();
-static void Option_ControlShutdownText();
+static void Option_ControlInitText(void);
+static void Option_ControlUpdateText(void);
+static void Option_ControlShutdownText(void);
 
-static void Option_ControlInitText()
+static void Option_ControlInitText(void)
 {
     m_Text[0] = Text_Create(
         0, TOP_Y - BORDER + (HEADER_HEIGHT + BORDER - ROW_HEIGHT) / 2,
@@ -100,6 +107,16 @@ static void Option_ControlInitText()
 
     const int16_t centre = Screen_GetResWidthDownscaled() / 2;
     int16_t max_y = 0;
+
+    m_TextArrowLeft = Text_Create(
+        -75, TOP_Y - BORDER + (HEADER_HEIGHT + BORDER - ROW_HEIGHT) / 2,
+        "\200");
+    Text_CentreH(m_TextArrowLeft, 1);
+    Text_CentreV(m_TextArrowLeft, 1);
+    m_TextArrowRight = Text_Create(
+        70, TOP_Y - BORDER + (HEADER_HEIGHT + BORDER - ROW_HEIGHT) / 2, "\201");
+    Text_CentreH(m_TextArrowRight, 1);
+    Text_CentreV(m_TextArrowRight, 1);
 
     m_Text[1] = Text_Create(0, TOP_Y - BORDER, " ");
     Text_CentreH(m_Text[1], 1);
@@ -166,7 +183,7 @@ static void Option_ControlInitText()
     Text_AddOutline(m_Text[0], 1);
 }
 
-static void Option_ControlUpdateText()
+static void Option_ControlUpdateText(void)
 {
     Text_ChangeText(
         m_Text[0],
@@ -188,12 +205,16 @@ static void Option_ControlUpdateText()
     }
 }
 
-static void Option_ControlShutdownText()
+static void Option_ControlShutdownText(void)
 {
     Text_Remove(m_Text[0]);
     Text_Remove(m_Text[1]);
     m_Text[0] = NULL;
     m_Text[1] = NULL;
+    Text_Remove(m_TextArrowLeft);
+    m_TextArrowLeft = NULL;
+    Text_Remove(m_TextArrowRight);
+    m_TextArrowRight = NULL;
     for (int i = 0; i < INPUT_KEY_NUMBER_OF; i++) {
         Text_Remove(m_TextA[i]);
         Text_Remove(m_TextB[i]);
@@ -202,7 +223,7 @@ static void Option_ControlShutdownText()
     }
 }
 
-void Option_FlashConflicts()
+void Option_FlashConflicts(void)
 {
     const TEXT_COLUMN_PLACEMENT *cols = g_Config.enable_cheats
         ? CtrlTextPlacementCheats
@@ -235,7 +256,7 @@ void Option_FlashConflicts()
     }
 }
 
-void Option_DefaultConflict()
+void Option_DefaultConflict(void)
 {
     for (int i = 0; i < INPUT_KEY_NUMBER_OF; i++) {
         S_INPUT_KEYCODE key_code =
@@ -333,11 +354,14 @@ void Option_Control(INVENTORY_ITEM *inv_item)
                     m_KeyChange == -1 ? m_Text[0] : m_TextA[m_KeyChange]);
                 Text_RemoveOutline(
                     m_KeyChange == -1 ? m_Text[0] : m_TextA[m_KeyChange]);
-
+                Text_Hide(m_TextArrowLeft, true);
+                Text_Hide(m_TextArrowRight, true);
                 if (m_KeyChange == -1) {
                     m_KeyChange = last_col->option;
                 } else if (m_KeyChange == first_col->option) {
                     m_KeyChange = -1;
+                    Text_Hide(m_TextArrowLeft, false);
+                    Text_Hide(m_TextArrowRight, false);
                 } else {
                     const TEXT_COLUMN_PLACEMENT *sel_col;
                     for (sel_col = cols;
@@ -367,11 +391,14 @@ void Option_Control(INVENTORY_ITEM *inv_item)
                     m_KeyChange == -1 ? m_Text[0] : m_TextA[m_KeyChange]);
                 Text_RemoveOutline(
                     m_KeyChange == -1 ? m_Text[0] : m_TextA[m_KeyChange]);
-
+                Text_Hide(m_TextArrowLeft, true);
+                Text_Hide(m_TextArrowRight, true);
                 if (m_KeyChange == -1) {
                     m_KeyChange = first_col->option;
                 } else if (m_KeyChange == last_col->option) {
                     m_KeyChange = -1;
+                    Text_Hide(m_TextArrowLeft, false);
+                    Text_Hide(m_TextArrowRight, false);
                 } else {
                     const TEXT_COLUMN_PLACEMENT *sel_col;
                     for (sel_col = cols;

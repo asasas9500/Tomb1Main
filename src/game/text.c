@@ -13,6 +13,8 @@
 #define TEXT_BOX_OFFSET 2
 #define TEXT_MAX_STRING_SIZE 100
 #define TEXT_MAX_STRINGS 64
+#define LEFT_ARROW_SYM 108
+#define RIGHT_ARROW_SYM 109
 
 static int16_t m_TextstringCount = 0;
 static TEXTSTRING m_TextstringTable[TEXT_MAX_STRINGS] = { 0 };
@@ -55,8 +57,24 @@ static int8_t m_TextASCIIMap[95] = {
 };
 
 static void Text_DrawText(TEXTSTRING *textstring);
+static uint8_t Text_MapLetterToSpriteNum(char letter);
 
-void Text_Init()
+static uint8_t Text_MapLetterToSpriteNum(char letter)
+{
+    if (letter >= 16) {
+        return m_TextASCIIMap[letter - 32];
+    } else if (letter == '\200') {
+        return LEFT_ARROW_SYM;
+    } else if (letter == '\201') {
+        return RIGHT_ARROW_SYM;
+    } else if (letter >= 11) {
+        return letter + 91;
+    } else {
+        return letter + 81;
+    }
+}
+
+void Text_Init(void)
 {
     for (int i = 0; i < TEXT_MAX_STRINGS; i++) {
         m_TextstringTable[i].flags.all = 0;
@@ -120,11 +138,19 @@ void Text_ChangeText(TEXTSTRING *textstring, const char *string)
         return;
     }
     size_t length = strlen(string) + 1;
-    CLAMPG(length, TEXT_MAX_STRING_SIZE);
-    strncpy(textstring->string, string, length);
+    strncpy(textstring->string, string, TEXT_MAX_STRING_SIZE - 1);
     if (length >= TEXT_MAX_STRING_SIZE) {
         textstring->string[TEXT_MAX_STRING_SIZE - 1] = '\0';
     }
+}
+
+void Text_SetPos(TEXTSTRING *textstring, int16_t x, int16_t y)
+{
+    if (!textstring) {
+        return;
+    }
+    textstring->pos.x = x;
+    textstring->pos.y = y;
 }
 
 void Text_SetScale(TEXTSTRING *textstring, int32_t scale_h, int32_t scale_v)
@@ -148,6 +174,14 @@ void Text_Flash(TEXTSTRING *textstring, bool enable, int16_t rate)
     } else {
         textstring->flags.flash = 0;
     }
+}
+
+void Text_Hide(TEXTSTRING *textstring, bool enable)
+{
+    if (!textstring) {
+        return;
+    }
+    textstring->flags.hide = enable;
 }
 
 void Text_AddBackground(
@@ -236,15 +270,8 @@ int32_t Text_GetWidth(TEXTSTRING *textstring)
             continue;
         }
 
-        if (letter >= 16) {
-            letter = m_TextASCIIMap[letter - 32];
-        } else if (letter >= 11) {
-            letter = letter + 91;
-        } else {
-            letter = letter + 81;
-        }
-
-        width += ((m_TextSpacing[(uint8_t)letter] + textstring->letter_spacing)
+        uint8_t sprite_num = Text_MapLetterToSpriteNum(letter);
+        width += ((m_TextSpacing[sprite_num] + textstring->letter_spacing)
                   * textstring->scale.h)
             / PHD_ONE;
     }
@@ -267,7 +294,7 @@ void Text_Remove(TEXTSTRING *textstring)
     }
 }
 
-void Text_RemoveAll()
+void Text_RemoveAll(void)
 {
     for (int i = 0; i < TEXT_MAX_STRINGS; i++) {
         TEXTSTRING *textstring = &m_TextstringTable[i];
@@ -278,7 +305,7 @@ void Text_RemoveAll()
     Text_Init();
 }
 
-void Text_Draw()
+void Text_Draw(void)
 {
     for (int i = 0; i < TEXT_MAX_STRINGS; i++) {
         TEXTSTRING *textstring = &m_TextstringTable[i];
@@ -291,6 +318,11 @@ void Text_Draw()
 static void Text_DrawText(TEXTSTRING *textstring)
 {
     int sx, sy, sh, sv;
+
+    if (textstring->flags.hide) {
+        return;
+    }
+
     if (textstring->flags.flash) {
         textstring->flash.count -= (int16_t)g_Camera.number_frames;
         if (textstring->flash.count <= -textstring->flash.rate) {
@@ -333,15 +365,7 @@ static void Text_DrawText(TEXTSTRING *textstring)
             continue;
         }
 
-        int32_t sprite_num = letter;
-        if (letter >= 16) {
-            sprite_num = m_TextASCIIMap[letter - 32];
-        } else if (letter >= 11) {
-            sprite_num = letter + 91;
-        } else {
-            sprite_num = letter + 81;
-        }
-
+        uint8_t sprite_num = Text_MapLetterToSpriteNum(letter);
         sx = Screen_GetRenderScale(x);
         sy = Screen_GetRenderScale(y);
         sh = Screen_GetRenderScale(textstring->scale.h);

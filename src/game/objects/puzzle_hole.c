@@ -25,24 +25,24 @@ int16_t g_PuzzleHoleBounds[12] = {
     +10 * PHD_DEGREE,
 };
 
-void SetupPuzzleHole(OBJECT_INFO *obj)
+void PuzzleHole_Setup(OBJECT_INFO *obj)
 {
-    obj->collision = PuzzleHoleCollision;
+    obj->collision = PuzzleHole_Collision;
     obj->save_flags = 1;
 }
 
-void SetupPuzzleDone(OBJECT_INFO *obj)
+void PuzzleHole_SetupDone(OBJECT_INFO *obj)
 {
     obj->save_flags = 1;
 }
 
-void PuzzleHoleCollision(
+void PuzzleHole_Collision(
     int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
 {
     ITEM_INFO *item = &g_Items[item_num];
 
-    if (lara_item->current_anim_state == AS_USEPUZZLE) {
-        if (!TestLaraPosition(g_PuzzleHoleBounds, item, lara_item)) {
+    if (lara_item->current_anim_state == LS_USE_PUZZLE) {
+        if (!Lara_TestPosition(item, g_PuzzleHoleBounds)) {
             return;
         }
 
@@ -70,7 +70,7 @@ void PuzzleHoleCollision(
         }
 
         return;
-    } else if (lara_item->current_anim_state != AS_STOP) {
+    } else if (lara_item->current_anim_state != LS_STOP) {
         return;
     }
 
@@ -79,7 +79,7 @@ void PuzzleHoleCollision(
         return;
     }
 
-    if (!TestLaraPosition(g_PuzzleHoleBounds, item, lara_item)) {
+    if (!Lara_TestPosition(item, g_PuzzleHoleBounds)) {
         return;
     }
 
@@ -144,10 +144,10 @@ void PuzzleHoleCollision(
 
     g_InvChosen = -1;
     if (correct) {
-        AlignLaraPosition(&g_PuzzleHolePosition, item, lara_item);
-        AnimateLaraUntil(lara_item, AS_USEPUZZLE);
-        lara_item->goal_anim_state = AS_STOP;
-        g_Lara.gun_status = LGS_HANDSBUSY;
+        Lara_AlignPosition(item, &g_PuzzleHolePosition);
+        Lara_AnimateUntil(lara_item, LS_USE_PUZZLE);
+        lara_item->goal_anim_state = LS_STOP;
+        g_Lara.gun_status = LGS_HANDS_BUSY;
         item->status = IS_ACTIVE;
         g_PickUpX = lara_item->pos.x;
         g_PickUpY = lara_item->pos.y;
@@ -160,14 +160,4 @@ void PuzzleHoleCollision(
         g_PickUpY = lara_item->pos.y;
         g_PickUpZ = lara_item->pos.z;
     }
-}
-
-int32_t PickupTrigger(int16_t item_num)
-{
-    ITEM_INFO *item = &g_Items[item_num];
-    if (item->status != IS_INVISIBLE) {
-        return 0;
-    }
-    item->status = IS_DEACTIVATED;
-    return 1;
 }

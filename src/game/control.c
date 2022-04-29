@@ -13,12 +13,12 @@
 #include "game/lot.h"
 #include "game/music.h"
 #include "game/objects/keyhole.h"
-#include "game/objects/puzzle_hole.h"
+#include "game/objects/pickup.h"
 #include "game/objects/switch.h"
+#include "game/objects/traps/lava.h"
+#include "game/objects/traps/movable_block.h"
 #include "game/overlay.h"
 #include "game/sound.h"
-#include "game/traps/lava.h"
-#include "game/traps/movable_block.h"
 #include "global/vars.h"
 
 #include <stddef.h>
@@ -40,32 +40,32 @@ static void Control_TriggerMusicTrack(
     switch (track) {
     case 28:
         if ((g_MusicTrackFlags[track] & IF_ONESHOT)
-            && g_LaraItem->current_anim_state == AS_UPJUMP) {
+            && g_LaraItem->current_anim_state == LS_JUMP_UP) {
             track = 29;
         }
         break;
 
     case 37:
-        if (g_LaraItem->current_anim_state != AS_HANG) {
+        if (g_LaraItem->current_anim_state != LS_HANG) {
             return;
         }
         break;
 
     case 41:
-        if (g_LaraItem->current_anim_state != AS_HANG) {
+        if (g_LaraItem->current_anim_state != LS_HANG) {
             return;
         }
         break;
 
     case 42:
         if ((g_MusicTrackFlags[track] & IF_ONESHOT)
-            && g_LaraItem->current_anim_state == AS_HANG) {
+            && g_LaraItem->current_anim_state == LS_HANG) {
             track = 43;
         }
         break;
 
     case 49:
-        if (g_LaraItem->current_anim_state != AS_SURFTREAD) {
+        if (g_LaraItem->current_anim_state != LS_SURF_TREAD) {
             return;
         }
         break;
@@ -78,7 +78,7 @@ static void Control_TriggerMusicTrack(
                 g_LevelComplete = true;
                 gym_completion_counter = 0;
             }
-        } else if (g_LaraItem->current_anim_state != AS_WATEROUT) {
+        } else if (g_LaraItem->current_anim_state != LS_WATER_OUT) {
             return;
         }
         break;
@@ -107,7 +107,7 @@ static void Control_TriggerMusicTrack(
     }
 }
 
-void CheckCheatMode()
+void CheckCheatMode(void)
 {
     static int32_t cheat_mode = 0;
     static int16_t cheat_angle = 0;
@@ -120,37 +120,37 @@ void CheckCheatMode()
     LARA_STATE as = g_LaraItem->current_anim_state;
     switch (cheat_mode) {
     case 0:
-        if (as == AS_WALK) {
+        if (as == LS_WALK) {
             cheat_mode = 1;
         }
         break;
 
     case 1:
-        if (as != AS_WALK) {
-            cheat_mode = as == AS_STOP ? 2 : 0;
+        if (as != LS_WALK) {
+            cheat_mode = as == LS_STOP ? 2 : 0;
         }
         break;
 
     case 2:
-        if (as != AS_STOP) {
-            cheat_mode = as == AS_BACK ? 3 : 0;
+        if (as != LS_STOP) {
+            cheat_mode = as == LS_BACK ? 3 : 0;
         }
         break;
 
     case 3:
-        if (as != AS_BACK) {
-            cheat_mode = as == AS_STOP ? 4 : 0;
+        if (as != LS_BACK) {
+            cheat_mode = as == LS_STOP ? 4 : 0;
         }
         break;
 
     case 4:
-        if (as != AS_STOP) {
+        if (as != LS_STOP) {
             cheat_angle = g_LaraItem->pos.y_rot;
         }
         cheat_turn = 0;
-        if (as == AS_TURN_L) {
+        if (as == LS_TURN_L) {
             cheat_mode = 5;
-        } else if (as == AS_TURN_R) {
+        } else if (as == LS_TURN_R) {
             cheat_mode = 6;
         } else {
             cheat_mode = 0;
@@ -158,7 +158,7 @@ void CheckCheatMode()
         break;
 
     case 5:
-        if (as == AS_TURN_L || as == AS_FASTTURN) {
+        if (as == LS_TURN_L || as == LS_FAST_TURN) {
             cheat_turn += (int16_t)(g_LaraItem->pos.y_rot - cheat_angle);
             cheat_angle = g_LaraItem->pos.y_rot;
         } else {
@@ -167,7 +167,7 @@ void CheckCheatMode()
         break;
 
     case 6:
-        if (as == AS_TURN_R || as == AS_FASTTURN) {
+        if (as == LS_TURN_R || as == LS_FAST_TURN) {
             cheat_turn += (int16_t)(g_LaraItem->pos.y_rot - cheat_angle);
             cheat_angle = g_LaraItem->pos.y_rot;
         } else {
@@ -176,16 +176,16 @@ void CheckCheatMode()
         break;
 
     case 7:
-        if (as != AS_STOP) {
-            cheat_mode = as == AS_COMPRESS ? 8 : 0;
+        if (as != LS_STOP) {
+            cheat_mode = as == LS_COMPRESS ? 8 : 0;
         }
         break;
 
     case 8:
         if (g_LaraItem->fall_speed > 0) {
-            if (as == AS_FORWARDJUMP) {
+            if (as == LS_JUMP_FORWARD) {
                 g_LevelComplete = true;
-            } else if (as == AS_BACKJUMP) {
+            } else if (as == LS_JUMP_BACK) {
                 Inv_AddItem(O_SHOTGUN_ITEM);
                 Inv_AddItem(O_MAGNUM_ITEM);
                 Inv_AddItem(O_UZI_ITEM);
@@ -300,12 +300,12 @@ int32_t ControlPhase(int32_t nframes, GAMEFLOW_LEVEL_TYPE level_type)
             item_num = fx->next_active;
         }
 
-        LaraControl(0);
-        HairControl(0);
+        Lara_Control();
+        Hair_Control(false);
 
-        CalculateCamera();
+        Camera_Update();
         Sound_UpdateEffects();
-        g_GameInfo.stats.timer++;
+        g_GameInfo.current[g_CurrentLevel].stats.timer++;
         Overlay_BarHealthTimerTick();
 
         m_FrameCount -= 0x10000;
@@ -340,7 +340,7 @@ void AnimateItem(ITEM_INFO *item)
             for (int i = 0; i < anim->number_commands; i++) {
                 switch (*command++) {
                 case AC_MOVE_ORIGIN:
-                    TranslateItem(item, command[0], command[1], command[2]);
+                    Item_Translate(item, command[0], command[1], command[2]);
                     command += 3;
                     break;
 
@@ -421,16 +421,6 @@ void AnimateItem(ITEM_INFO *item)
     item->pos.z += (phd_cos(item->pos.y_rot) * item->speed) >> W2V_SHIFT;
 }
 
-void TranslateItem(ITEM_INFO *item, int32_t x, int32_t y, int32_t z)
-{
-    int32_t c = phd_cos(item->pos.y_rot);
-    int32_t s = phd_sin(item->pos.y_rot);
-
-    item->pos.x += (c * x + s * z) >> W2V_SHIFT;
-    item->pos.y += y;
-    item->pos.z += (c * z - s * x) >> W2V_SHIFT;
-}
-
 void RefreshCamera(int16_t type, int16_t *data)
 {
     int16_t trigger;
@@ -484,8 +474,8 @@ void TestTriggers(int16_t *data, int32_t heavy)
 
     if ((*data & DATA_TYPE) == FT_LAVA) {
         if (!heavy && g_LaraItem->pos.y == g_LaraItem->floor) {
-            if (TestLavaFloor(g_LaraItem)) {
-                LavaBurn(g_LaraItem);
+            if (Lava_TestFloor(g_LaraItem)) {
+                Lava_Burn(g_LaraItem);
             }
         }
 
@@ -515,10 +505,10 @@ void TestTriggers(int16_t *data, int32_t heavy)
         switch (type) {
         case TT_SWITCH: {
             int16_t value = *data++ & VALUE_BITS;
-            if (!SwitchTrigger(value, timer)) {
+            if (!Switch_Trigger(value, timer)) {
                 return;
             }
-            switch_off = g_Items[value].current_anim_state == AS_RUN;
+            switch_off = g_Items[value].current_anim_state == LS_RUN;
             break;
         }
 
@@ -531,7 +521,7 @@ void TestTriggers(int16_t *data, int32_t heavy)
 
         case TT_KEY: {
             int16_t value = *data++ & VALUE_BITS;
-            if (!KeyTrigger(value)) {
+            if (!KeyHole_Trigger(value)) {
                 return;
             }
             break;
@@ -539,7 +529,7 @@ void TestTriggers(int16_t *data, int32_t heavy)
 
         case TT_PICKUP: {
             int16_t value = *data++ & VALUE_BITS;
-            if (!PickupTrigger(value)) {
+            if (!Pickup_Trigger(value)) {
                 return;
             }
             break;
@@ -727,10 +717,11 @@ void TestTriggers(int16_t *data, int32_t heavy)
             break;
 
         case TO_SECRET:
-            if ((g_GameInfo.stats.secret_flags & (1 << value))) {
+            if ((g_GameInfo.current[g_CurrentLevel].stats.secret_flags
+                 & (1 << value))) {
                 break;
             }
-            g_GameInfo.stats.secret_flags |= 1 << value;
+            g_GameInfo.current[g_CurrentLevel].stats.secret_flags |= 1 << value;
             Music_Play(13);
             break;
         }
@@ -775,7 +766,7 @@ int32_t TriggerActive(ITEM_INFO *item)
     return ok;
 }
 
-void FlipMap()
+void FlipMap(void)
 {
     Sound_StopAmbientSounds();
 

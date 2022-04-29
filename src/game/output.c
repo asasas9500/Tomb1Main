@@ -42,7 +42,7 @@ static const int16_t *Output_CalcObjectVertices(const int16_t *obj_ptr);
 static const int16_t *Output_CalcVerticeLight(const int16_t *obj_ptr);
 static const int16_t *Output_CalcRoomVertices(const int16_t *obj_ptr);
 static int32_t Output_CalcFogShade(int32_t depth);
-static void Output_CalcWibbleTable();
+static void Output_CalcWibbleTable(void);
 
 static const int16_t *Output_DrawObjectG3(
     const int16_t *obj_ptr, int32_t number)
@@ -347,7 +347,7 @@ static int32_t Output_CalcFogShade(int32_t depth)
     return (depth - fog_begin) * 0x1FFF / (fog_end - fog_begin);
 }
 
-static void Output_CalcWibbleTable()
+static void Output_CalcWibbleTable(void)
 {
     for (int i = 0; i < WIBBLE_SIZE; i++) {
         PHD_ANGLE angle = (i * PHD_360) / WIBBLE_SIZE;
@@ -357,13 +357,13 @@ static void Output_CalcWibbleTable()
     }
 }
 
-bool Output_Init()
+bool Output_Init(void)
 {
     Output_CalcWibbleTable();
     return S_Output_Init();
 }
 
-void Output_Shutdown()
+void Output_Shutdown(void)
 {
     S_Output_Shutdown();
 }
@@ -378,7 +378,7 @@ void Output_SetFullscreen(bool fullscreen)
     S_Output_SetFullscreen(fullscreen);
 }
 
-void Output_ApplyResolution()
+void Output_ApplyResolution(void)
 {
     S_Output_ApplyResolution();
 }
@@ -404,22 +404,22 @@ RGB888 Output_GetPaletteColor(uint8_t idx)
     return S_Output_GetPaletteColor(idx);
 }
 
-void Output_ClearScreen()
+void Output_ClearScreen(void)
 {
     S_Output_ClearBackBuffer();
 }
 
-void Output_DrawEmpty()
+void Output_DrawEmpty(void)
 {
     S_Output_DrawEmpty();
 }
 
-void Output_InitialisePolyList()
+void Output_InitialisePolyList(void)
 {
     S_Output_RenderBegin();
 }
 
-int32_t Output_DumpScreen()
+int32_t Output_DumpScreen(void)
 {
     Output_DrawOverlayScreen();
     S_Output_DumpScreen();
@@ -572,17 +572,17 @@ void Output_DrawShadow(int16_t size, int16_t *bptr, ITEM_INFO *item)
     phd_PopMatrix();
 }
 
-int32_t Output_GetDrawDistMin()
+int32_t Output_GetDrawDistMin(void)
 {
     return 127;
 }
 
-int32_t Output_GetDrawDistFade()
+int32_t Output_GetDrawDistFade(void)
 {
     return m_DrawDistFade;
 }
 
-int32_t Output_GetDrawDistMax()
+int32_t Output_GetDrawDistMax(void)
 {
     return m_DrawDistMax;
 }
@@ -604,12 +604,12 @@ void Output_SetWaterColor(const RGBF *color)
     m_WaterColor.b = color->b;
 }
 
-int32_t Output_GetNearZ()
+int32_t Output_GetNearZ(void)
 {
     return Output_GetDrawDistMin() << W2V_SHIFT;
 }
 
-int32_t Output_GetFarZ()
+int32_t Output_GetFarZ(void)
 {
     return Output_GetDrawDistMax() << W2V_SHIFT;
 }
@@ -659,7 +659,7 @@ void Output_DrawSprite(
     }
 }
 
-void Output_CopyPictureToScreen()
+void Output_CopyPictureToScreen(void)
 {
     S_Output_CopyFromPicture();
 }
@@ -823,7 +823,7 @@ void Output_SetupAboveWater(bool underwater)
 
 void Output_AnimateTextures(int32_t ticks)
 {
-    g_WibbleOffset = (g_WibbleOffset + ticks) % WIBBLE_SIZE;
+    g_WibbleOffset = (g_WibbleOffset + ticks / TICKS_PER_FRAME) % WIBBLE_SIZE;
 
     static int32_t tick_comp = 0;
     tick_comp += ticks;
@@ -849,18 +849,16 @@ void Output_AnimateTextures(int32_t ticks)
 
 static void Output_DrawBlackScreen(uint8_t alpha)
 {
-    if (alpha) {
-        int32_t sx = 0;
-        int32_t sy = 0;
-        int32_t sw = ViewPort_GetMaxX();
-        int32_t sh = ViewPort_GetMaxY();
+    int32_t sx = 0;
+    int32_t sy = 0;
+    int32_t sw = ViewPort_GetWidth();
+    int32_t sh = ViewPort_GetHeight();
 
-        RGBA8888 background = { 0, 0, 0, alpha };
-        S_Output_DisableDepthTest();
-        S_Output_ClearDepthBuffer();
-        Output_DrawScreenFlatQuad(sx, sy, sw, sh, background);
-        S_Output_EnableDepthTest();
-    }
+    RGBA8888 background = { 0, 0, 0, alpha };
+    S_Output_DisableDepthTest();
+    S_Output_ClearDepthBuffer();
+    Output_DrawScreenFlatQuad(sx, sy, sw, sh, background);
+    S_Output_EnableDepthTest();
 }
 
 static void Output_FadeAnimate(int ticks)
@@ -886,17 +884,17 @@ static void Output_FadeAnimate(int ticks)
     }
 }
 
-void Output_DrawBackdropScreen()
+void Output_DrawBackdropScreen(void)
 {
     Output_DrawBlackScreen(m_BackdropCurAlpha);
 }
 
-void Output_DrawOverlayScreen()
+void Output_DrawOverlayScreen(void)
 {
     Output_DrawBlackScreen(m_OverlayCurAlpha);
 }
 
-void Output_FadeReset()
+void Output_FadeReset(void)
 {
     m_BackdropCurAlpha = 0;
     m_OverlayCurAlpha = 0;
@@ -909,7 +907,7 @@ void Output_FadeSetSpeed(double speed)
     m_FadeSpeed = speed;
 }
 
-void Output_FadeResetToBlack()
+void Output_FadeResetToBlack(void)
 {
     m_OverlayCurAlpha = 255;
     m_OverlayDstAlpha = 255;
@@ -946,7 +944,7 @@ void Output_FadeToTransparent(bool allow_immediate)
     }
 }
 
-bool Output_FadeIsAnimating()
+bool Output_FadeIsAnimating(void)
 {
     if (!g_Config.enable_fade_effects) {
         return false;

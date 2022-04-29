@@ -60,8 +60,15 @@
     // Enables braid animation. Currently works only in the Lost Valley level.
     "enable_braid": false,
 
+    // Enables showing maximum pickup count and kill count on each level.
+    // This includes unobtainable items.
+    "enable_detailed_stats": true,
+
     // Enables showing level stats when selecting compass.
     "enable_compass_stats": true,
+
+    // Enables a total game statistics screen that plays after the credits.
+    "enable_total_stats": true,
 
     // Makes the ingame timer work even while the game is showing the
     // inventory.
@@ -178,6 +185,13 @@
     // Disables music in the main menu.
     "disable_music_in_menu": false,
 
+    // Pauses sound in the inventory screen.
+    "disable_music_in_inventory": false,
+
+    // Remove all collision with TRex upon death.
+    // This helps when the TRex's body blocks the passage out.
+    "disable_trex_collision": false,
+
     // Overrides game resolution. Leave at 0 or negative values to
     // automatically guess from the screen size. Note: these values
     // only override the last position in the game resolutions menu that
@@ -200,4 +214,7 @@
 
     // Enhances texture filtering at distances.
     "anisotropy_filter": 16.0,
+
+    // Lara walks to pickups and switches when nearby instead of teleporting
+    "walk_to_items" : false,
 }

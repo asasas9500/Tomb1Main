@@ -3,9 +3,9 @@
 #include "3dsystem/matrix.h"
 #include "3dsystem/phd_math.h"
 #include "config.h"
-#include "game/control.h"
 #include "game/draw.h"
 #include "game/output.h"
+#include "game/room.h"
 #include "global/const.h"
 #include "global/types.h"
 #include "global/vars.h"
@@ -19,7 +19,7 @@ static bool m_FirstHair = false;
 static PHD_3DPOS m_Hair[HAIR_SEGMENTS + 1] = { 0 };
 static PHD_VECTOR m_HVel[HAIR_SEGMENTS + 1] = { 0 };
 
-void InitialiseHair()
+void Hair_Initialise(void)
 {
     m_FirstHair = true;
 
@@ -40,7 +40,7 @@ void InitialiseHair()
     }
 }
 
-void HairControl(int in_cutscene)
+void Hair_Control(bool in_cutscene)
 {
     if (!g_Config.enable_braid || !g_Objects[O_HAIR].loaded) {
         return;
@@ -62,19 +62,19 @@ void HairControl(int in_cutscene)
 
         switch (g_Lara.hit_direction) {
         case DIR_NORTH:
-            spaz = AA_SPAZ_FORWARD;
+            spaz = LA_SPAZ_FORWARD;
             break;
 
         case DIR_SOUTH:
-            spaz = AA_SPAZ_BACK;
+            spaz = LA_SPAZ_BACK;
             break;
 
         case DIR_EAST:
-            spaz = AA_SPAZ_RIGHT;
+            spaz = LA_SPAZ_RIGHT;
             break;
 
         default:
-            spaz = AA_SPAZ_LEFT;
+            spaz = LA_SPAZ_LEFT;
             break;
         }
 
@@ -206,7 +206,7 @@ void HairControl(int in_cutscene)
                 + (frame[FRAME_BOUND_MIN_Y] + frame[FRAME_BOUND_MAX_Y]) / 2;
             z = g_LaraItem->pos.z
                 + (frame[FRAME_BOUND_MIN_Z] + frame[FRAME_BOUND_MAX_Z]) / 2;
-            water_level = GetWaterHeight(x, y, z, room_number);
+            water_level = Room_GetWaterHeight(x, y, z, room_number);
         }
 
         for (i = 1; i < HAIR_SEGMENTS + 1; i++, bone += 4) {
@@ -215,10 +215,10 @@ void HairControl(int in_cutscene)
             m_HVel[0].z = m_Hair[i].z;
 
             if (!in_cutscene) {
-                floor = GetFloor(
+                floor = Room_GetFloor(
                     m_Hair[i].x, m_Hair[i].y, m_Hair[i].z, &room_number);
-                height =
-                    GetHeight(floor, m_Hair[i].x, m_Hair[i].y, m_Hair[i].z);
+                height = Room_GetHeight(
+                    floor, m_Hair[i].x, m_Hair[i].y, m_Hair[i].z);
             } else
                 height = 32767;
 
@@ -227,7 +227,7 @@ void HairControl(int in_cutscene)
             m_Hair[i].z += m_HVel[i].z * 3 / 4;
 
             switch (g_Lara.water_status) {
-            case LWS_ABOVEWATER:
+            case LWS_ABOVE_WATER:
                 m_Hair[i].y += 10;
                 if (water_level != NO_HEIGHT && m_Hair[i].y > water_level)
                     m_Hair[i].y = water_level;
@@ -299,7 +299,7 @@ void HairControl(int in_cutscene)
     }
 }
 
-void DrawHair()
+void Hair_Draw(void)
 {
     if (!g_Config.enable_braid || !g_Objects[O_HAIR].loaded) {
         return;

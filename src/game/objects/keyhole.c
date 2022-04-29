@@ -28,17 +28,17 @@ int32_t g_PickUpX;
 int32_t g_PickUpY;
 int32_t g_PickUpZ;
 
-void SetupKeyHole(OBJECT_INFO *obj)
+void KeyHole_Setup(OBJECT_INFO *obj)
 {
-    obj->collision = KeyHoleCollision;
+    obj->collision = KeyHole_Collision;
     obj->save_flags = 1;
 }
 
-void KeyHoleCollision(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
+void KeyHole_Collision(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
 {
     ITEM_INFO *item = &g_Items[item_num];
 
-    if (lara_item->current_anim_state != AS_STOP) {
+    if (lara_item->current_anim_state != LS_STOP) {
         return;
     }
 
@@ -47,7 +47,7 @@ void KeyHoleCollision(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
         return;
     }
 
-    if (!TestLaraPosition(g_KeyHoleBounds, item, lara_item)) {
+    if (!Lara_TestPosition(item, g_KeyHoleBounds)) {
         return;
     }
 
@@ -112,10 +112,10 @@ void KeyHoleCollision(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
 
     g_InvChosen = -1;
     if (correct) {
-        AlignLaraPosition(&g_KeyHolePosition, item, lara_item);
-        AnimateLaraUntil(lara_item, AS_USEKEY);
-        lara_item->goal_anim_state = AS_STOP;
-        g_Lara.gun_status = LGS_HANDSBUSY;
+        Lara_AlignPosition(item, &g_KeyHolePosition);
+        Lara_AnimateUntil(lara_item, LS_USE_KEY);
+        lara_item->goal_anim_state = LS_STOP;
+        g_Lara.gun_status = LGS_HANDS_BUSY;
         item->status = IS_ACTIVE;
         g_PickUpX = lara_item->pos.x;
         g_PickUpY = lara_item->pos.y;
@@ -130,12 +130,12 @@ void KeyHoleCollision(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll)
     }
 }
 
-int32_t KeyTrigger(int16_t item_num)
+bool KeyHole_Trigger(int16_t item_num)
 {
     ITEM_INFO *item = &g_Items[item_num];
-    if (item->status == IS_ACTIVE && g_Lara.gun_status != LGS_HANDSBUSY) {
+    if (item->status == IS_ACTIVE && g_Lara.gun_status != LGS_HANDS_BUSY) {
         item->status = IS_DEACTIVATED;
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }

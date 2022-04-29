@@ -1,13 +1,13 @@
 #include "game/demo.h"
 
 #include "config.h"
-#include "game/control.h"
 #include "game/game.h"
 #include "game/gameflow.h"
 #include "game/input.h"
 #include "game/items.h"
 #include "game/output.h"
 #include "game/random.h"
+#include "game/room.h"
 #include "game/setup.h"
 #include "game/text.h"
 #include "global/const.h"
@@ -19,10 +19,10 @@
 static int32_t m_DemoLevel = -1;
 static uint32_t *m_DemoPtr = NULL;
 
-int32_t StartDemo()
+int32_t StartDemo(void)
 {
     TEXTSTRING *txt;
-    START_INFO start, *s;
+    RESUME_INFO start, *s;
 
     bool any_demos = false;
     for (int i = g_GameFlow.first_level_num; i < g_GameFlow.last_level_num;
@@ -88,7 +88,7 @@ int32_t StartDemo()
     return GF_EXIT_TO_TITLE;
 }
 
-void LoadLaraDemoPos()
+void LoadLaraDemoPos(void)
 {
     m_DemoPtr = g_DemoData;
     ITEM_INFO *item = g_LaraItem;
@@ -105,11 +105,11 @@ void LoadLaraDemoPos()
     }
 
     FLOOR_INFO *floor =
-        GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
-    item->floor = GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
+        Room_GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
+    item->floor = Room_GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
 }
 
-bool ProcessDemoInput()
+bool ProcessDemoInput(void)
 {
     if (m_DemoPtr >= &g_DemoData[DEMO_COUNT_MAX] || (int)*m_DemoPtr == -1) {
         return false;

@@ -2,17 +2,17 @@
 
 #include "config.h"
 #include "filesystem.h"
-#include "game/ai/pod.h"
-#include "game/control.h"
 #include "game/gameflow.h"
 #include "game/inv.h"
 #include "game/items.h"
+#include "game/objects/ai/pod.h"
 #include "game/objects/pickup.h"
 #include "game/objects/puzzle_hole.h"
+#include "game/objects/traps/movable_block.h"
+#include "game/objects/traps/rolling_block.h"
+#include "game/room.h"
 #include "game/savegame_bson.h"
 #include "game/savegame_legacy.h"
-#include "game/traps/movable_block.h"
-#include "game/traps/rolling_block.h"
 #include "global/vars.h"
 #include "log.h"
 #include "memory.h"
@@ -61,27 +61,17 @@ static const SAVEGAME_STRATEGY m_Strategies[] = {
     { 0 },
 };
 
-static void Savegame_LoadPreprocess();
-static void Savegame_LoadPostrocess();
+static void Savegame_LoadPreprocess(void);
+static void Savegame_LoadPostrocess(void);
 
-static void Savegame_LoadPreprocess()
+static void Savegame_LoadPreprocess(void)
 {
     m_OldLaraLOTNode = g_Lara.LOT.node;
 
-    for (int i = 0; i < g_LevelItemCount; i++) {
-        ITEM_INFO *item = &g_Items[i];
-        OBJECT_INFO *obj = &g_Objects[item->object_number];
-
-        if (obj->control == MovableBlockControl) {
-            AlterFloorHeight(item, WALL_L);
-        }
-        if (obj->control == RollingBlockControl) {
-            AlterFloorHeight(item, WALL_L * 2);
-        }
-    }
+    Savegame_InitStartCurrentInfo();
 }
 
-static void Savegame_LoadPostProcess()
+static void Savegame_LoadPostProcess(void)
 {
     for (int i = 0; i < g_LevelItemCount; i++) {
         ITEM_INFO *item = &g_Items[i];
@@ -90,37 +80,37 @@ static void Savegame_LoadPostProcess()
         if (obj->save_position && obj->shadow_size) {
             int16_t room_num = item->room_number;
             FLOOR_INFO *floor =
-                GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
+                Room_GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
             item->floor =
-                GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
+                Room_GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
         }
 
         if (obj->save_flags) {
             item->flags &= 0xFF00;
 
-            if (obj->collision == PuzzleHoleCollision
+            if (obj->collision == PuzzleHole_Collision
                 && (item->status == IS_DEACTIVATED
                     || item->status == IS_ACTIVE)) {
                 item->object_number += O_PUZZLE_DONE1 - O_PUZZLE_HOLE1;
             }
 
-            if (obj->control == PodControl && item->status == IS_DEACTIVATED) {
+            if (obj->control == Pod_Control && item->status == IS_DEACTIVATED) {
                 item->mesh_bits = 0x1FF;
                 item->collidable = 0;
             }
 
-            if (obj->collision == PickUpCollision
+            if (obj->collision == Pickup_Collision
                 && item->status == IS_DEACTIVATED) {
                 RemoveDrawnItem(i);
             }
         }
 
-        if (obj->control == MovableBlockControl
+        if (obj->control == MovableBlock_Control
             && item->status == IS_NOT_ACTIVE) {
             AlterFloorHeight(item, -WALL_L);
         }
 
-        if (obj->control == RollingBlockControl
+        if (obj->control == RollingBlock_Control
             && item->current_anim_state != RBS_MOVING) {
             AlterFloorHeight(item, -WALL_L * 2);
         }
@@ -164,20 +154,26 @@ static void Savegame_LoadPostProcess()
     g_Lara.LOT.target_box = NO_BOX;
 }
 
-void Savegame_SetCurrentPosition(int level_num)
+void Savegame_PreprocessItems(void)
 {
-    for (int i = 0; i < g_GameFlow.level_count; i++) {
-        if (g_GameFlow.levels[i].level_type == GFL_CURRENT) {
-            g_GameInfo.start[g_CurrentLevel] = g_GameInfo.start[i];
+    for (int i = 0; i < g_LevelItemCount; i++) {
+        ITEM_INFO *item = &g_Items[i];
+        OBJECT_INFO *obj = &g_Objects[item->object_number];
+
+        if (obj->control == MovableBlock_Control) {
+            AlterFloorHeight(item, WALL_L);
+        }
+        if (obj->control == RollingBlock_Control) {
+            AlterFloorHeight(item, WALL_L * 2);
         }
     }
 }
 
-void Savegame_InitStartEndInfo()
+void Savegame_InitStartCurrentInfo(void)
 {
     for (int i = 0; i < g_GameFlow.level_count; i++) {
         Savegame_ResetStartInfo(i);
-        Savegame_ResetEndInfo(i);
+        Savegame_ResetCurrentInfo(i);
         Savegame_ApplyLogicToStartInfo(i);
         g_GameInfo.start[i].flags.available = 0;
     }
@@ -187,14 +183,14 @@ void Savegame_InitStartEndInfo()
 
 void Savegame_ResetStartInfo(int level_num)
 {
-    START_INFO *start = &g_GameInfo.start[level_num];
-    memset(start, 0, sizeof(START_INFO));
+    RESUME_INFO *start = &g_GameInfo.start[level_num];
+    memset(start, 0, sizeof(RESUME_INFO));
     Savegame_ApplyLogicToStartInfo(level_num);
 }
 
 void Savegame_ApplyLogicToStartInfo(int level_num)
 {
-    START_INFO *start = &g_GameInfo.start[level_num];
+    RESUME_INFO *start = &g_GameInfo.start[level_num];
 
     if (!g_Config.disable_healing_between_levels
         || level_num == g_GameFlow.gym_level_num
@@ -251,84 +247,73 @@ void Savegame_ApplyLogicToStartInfo(int level_num)
     }
 }
 
-void Savegame_PersistGameToStartInfo(int level_num)
+void Savegame_ResetCurrentInfo(int level_num)
 {
-    // Persist Lara's inventory to the start info.
+    RESUME_INFO *current = &g_GameInfo.current[level_num];
+    memset(current, 0, sizeof(RESUME_INFO));
+}
+
+void Savegame_CarryCurrentInfoToStartInfo(int32_t src_level, int32_t dst_level)
+{
+    memcpy(
+        &g_GameInfo.start[dst_level], &g_GameInfo.current[src_level],
+        sizeof(RESUME_INFO));
+}
+
+void Savegame_PersistGameToCurrentInfo(int level_num)
+{
+    // Persist Lara's inventory to the current info.
     // Used to carry over Lara's inventory between levels.
 
-    START_INFO *start = &g_GameInfo.start[level_num];
+    RESUME_INFO *current = &g_GameInfo.current[level_num];
 
-    if (g_LaraItem) {
-        start->lara_hitpoints = g_LaraItem->hit_points;
-    } else {
-        // Carry over variables from previous levels if the current level
-        // has no Lara object (such as the cutscene levels)
-        for (int l = level_num - 1; l >= 0; l--) {
-            START_INFO *prev_start = &g_GameInfo.start[l];
-            if (g_GameFlow.levels[l].level_type == GFL_NORMAL) {
-                start->lara_hitpoints = prev_start->lara_hitpoints;
-                break;
-            }
-        }
-    }
+    current->lara_hitpoints = g_LaraItem->hit_points;
+    current->flags.available = 1;
+    current->flags.costume = 0;
 
-    start->flags.available = 1;
-    start->flags.costume = 0;
-
-    start->pistol_ammo = 1000;
+    current->pistol_ammo = 1000;
     if (Inv_RequestItem(O_GUN_ITEM)) {
-        start->flags.got_pistols = 1;
+        current->flags.got_pistols = 1;
     } else {
-        start->flags.got_pistols = 0;
+        current->flags.got_pistols = 0;
     }
 
     if (Inv_RequestItem(O_MAGNUM_ITEM)) {
-        start->magnum_ammo = g_Lara.magnums.ammo;
-        start->flags.got_magnums = 1;
+        current->magnum_ammo = g_Lara.magnums.ammo;
+        current->flags.got_magnums = 1;
     } else {
-        start->magnum_ammo = Inv_RequestItem(O_MAG_AMMO_ITEM) * MAGNUM_AMMO_QTY;
-        start->flags.got_magnums = 0;
+        current->magnum_ammo =
+            Inv_RequestItem(O_MAG_AMMO_ITEM) * MAGNUM_AMMO_QTY;
+        current->flags.got_magnums = 0;
     }
 
     if (Inv_RequestItem(O_UZI_ITEM)) {
-        start->uzi_ammo = g_Lara.uzis.ammo;
-        start->flags.got_uzis = 1;
+        current->uzi_ammo = g_Lara.uzis.ammo;
+        current->flags.got_uzis = 1;
     } else {
-        start->uzi_ammo = Inv_RequestItem(O_UZI_AMMO_ITEM) * UZI_AMMO_QTY;
-        start->flags.got_uzis = 0;
+        current->uzi_ammo = Inv_RequestItem(O_UZI_AMMO_ITEM) * UZI_AMMO_QTY;
+        current->flags.got_uzis = 0;
     }
 
     if (Inv_RequestItem(O_SHOTGUN_ITEM)) {
-        start->shotgun_ammo = g_Lara.shotgun.ammo;
-        start->flags.got_shotgun = 1;
+        current->shotgun_ammo = g_Lara.shotgun.ammo;
+        current->flags.got_shotgun = 1;
     } else {
-        start->shotgun_ammo =
+        current->shotgun_ammo =
             Inv_RequestItem(O_SG_AMMO_ITEM) * SHOTGUN_AMMO_QTY;
-        start->flags.got_shotgun = 0;
+        current->flags.got_shotgun = 0;
     }
 
-    start->num_medis = Inv_RequestItem(O_MEDI_ITEM);
-    start->num_big_medis = Inv_RequestItem(O_BIGMEDI_ITEM);
-    start->num_scions = Inv_RequestItem(O_SCION_ITEM);
+    current->num_medis = Inv_RequestItem(O_MEDI_ITEM);
+    current->num_big_medis = Inv_RequestItem(O_BIGMEDI_ITEM);
+    current->num_scions = Inv_RequestItem(O_SCION_ITEM);
 
-    start->gun_type = g_Lara.gun_type;
+    current->gun_type = g_Lara.gun_type;
     if (g_Lara.gun_status == LGS_READY) {
-        start->gun_status = LGS_READY;
+        current->gun_status = LGS_READY;
     } else {
-        start->gun_status = LGS_ARMLESS;
+        current->gun_status = LGS_ARMLESS;
     }
-}
-
-void Savegame_ResetEndInfo(int level_num)
-{
-    END_INFO *end = &g_GameInfo.end[level_num];
-    memset(end, 0, sizeof(END_INFO));
-}
-
-void Savegame_PersistGameToEndInfo(int level_num)
-{
-    END_INFO *end = &g_GameInfo.end[level_num];
-    end->stats = g_GameInfo.stats;
 }
 
 int32_t Savegame_GetLevelNumber(int32_t slot_num)
@@ -372,12 +357,11 @@ bool Savegame_Save(int32_t slot_num, GAME_INFO *game_info)
 
     File_CreateDirectory(SAVES_DIR);
 
-    Savegame_PersistGameToStartInfo(g_CurrentLevel);
-    Savegame_PersistGameToEndInfo(g_CurrentLevel);
+    Savegame_PersistGameToCurrentInfo(g_CurrentLevel);
 
     for (int i = 0; i < g_GameFlow.level_count; i++) {
         if (g_GameFlow.levels[i].level_type == GFL_CURRENT) {
-            game_info->start[i] = game_info->start[g_CurrentLevel];
+            game_info->current[i] = game_info->current[g_CurrentLevel];
         }
     }
 
@@ -395,7 +379,7 @@ bool Savegame_Save(int32_t slot_num, GAME_INFO *game_info)
                 strategy->save_to_file(fp, game_info);
                 savegame_info->format = strategy->format;
                 Memory_FreePointer(&savegame_info->full_path);
-                savegame_info->full_path = Memory_Dup(File_GetPath(fp));
+                savegame_info->full_path = Memory_DupStr(File_GetPath(fp));
                 savegame_info->counter = g_SaveCounter;
                 savegame_info->level_num = g_CurrentLevel;
                 game_info->current_save_slot = slot_num;
@@ -411,7 +395,7 @@ bool Savegame_Save(int32_t slot_num, GAME_INFO *game_info)
     }
 
     if (ret) {
-        REQUEST_INFO *req = &g_LoadSavegameRequester;
+        REQUEST_INFO *req = &g_SavegameRequester;
         req->item_flags[slot_num] &= ~RIF_BLOCKED;
         sprintf(
             &req->item_texts[req->item_text_len * slot_num], "%s %d",
@@ -447,7 +431,7 @@ bool Savegame_UpdateDeathCounters(int32_t slot_num, GAME_INFO *game_info)
     return ret;
 }
 
-void Savegame_Shutdown()
+void Savegame_Shutdown(void)
 {
     for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
         SAVEGAME_INFO *savegame_info = &m_SavegameInfo[i];
@@ -459,7 +443,7 @@ void Savegame_Shutdown()
     }
 }
 
-void Savegame_ScanSavedGames()
+void Savegame_ScanSavedGames(void)
 {
     Savegame_Shutdown();
 
@@ -490,7 +474,8 @@ void Savegame_ScanSavedGames()
                     if (strategy->fill_info(fp, savegame_info)) {
                         savegame_info->format = strategy->format;
                         Memory_FreePointer(&savegame_info->full_path);
-                        savegame_info->full_path = Memory_Dup(File_GetPath(fp));
+                        savegame_info->full_path =
+                            Memory_DupStr(File_GetPath(fp));
                     }
                     File_Close(fp);
                 }
@@ -509,7 +494,7 @@ void Savegame_ScanSavedGames()
         }
     }
 
-    REQUEST_INFO *req = &g_LoadSavegameRequester;
+    REQUEST_INFO *req = &g_SavegameRequester;
 
     req->items = 0;
     for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
@@ -542,4 +527,30 @@ void Savegame_ScanSavedGames()
     }
 
     g_SaveCounter++;
+}
+
+void Savegame_ScanAvailableLevels(REQUEST_INFO *req)
+{
+    SAVEGAME_INFO *savegame_info =
+        &m_SavegameInfo[g_InvExtraData[IED_SAVEGAME_NUM]];
+    req->items = 0;
+
+    for (int i = 1; i <= g_GameFlow.last_level_num; i++) {
+        RESUME_INFO *start = &g_GameInfo.start[i];
+
+        if (i <= savegame_info->level_num) {
+            req->item_flags[req->items] &= ~RIF_BLOCKED;
+            sprintf(
+                &req->item_texts[req->items * req->item_text_len], "%s",
+                g_GameFlow.levels[i].level_title);
+        } else {
+            req->item_flags[req->items] |= RIF_BLOCKED;
+            sprintf(
+                &req->item_texts[req->items * req->item_text_len],
+                g_GameFlow.strings[GS_PASSPORT_LOCKED_LEVEL]);
+        }
+        req->items++;
+    }
+    req->requested = 0;
+    req->line_offset = 0;
 }

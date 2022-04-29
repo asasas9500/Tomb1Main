@@ -43,9 +43,9 @@
 static const char *m_T1MGameflowPath = "cfg/Tomb1Main_gameflow.json5";
 static const char *m_T1MGameflowGoldPath = "cfg/Tomb1Main_gameflow_ub.json5";
 
-static char *Shell_GetScreenshotName();
+static char *Shell_GetScreenshotName(void);
 
-static char *Shell_GetScreenshotName()
+static char *Shell_GetScreenshotName(void)
 {
     // Get level title of unknown length
     char level_title[100];
@@ -115,7 +115,7 @@ static char *Shell_GetScreenshotName()
     return out;
 }
 
-void Shell_Main()
+void Shell_Main(void)
 {
     Config_Read();
 
@@ -153,7 +153,7 @@ void Shell_Main()
         return;
     }
 
-    Savegame_InitStartEndInfo();
+    Savegame_InitStartCurrentInfo();
     Savegame_ScanSavedGames();
     Settings_Read();
 
@@ -182,6 +182,11 @@ void Shell_Main()
                 g_GameInfo.current_save_slot = gf_param;
                 gf_option = GameFlow_InterpretSequence(level_num, GFL_SAVED);
             }
+            break;
+        }
+
+        case GF_RESTART_GAME: {
+            gf_option = GameFlow_InterpretSequence(gf_param, GFL_RESTART);
             break;
         }
 
@@ -258,11 +263,11 @@ void Shell_Wait(int nticks)
     }
 }
 
-bool Shell_MakeScreenshot()
+bool Shell_MakeScreenshot(void)
 {
     File_CreateDirectory(SCREENSHOTS_DIR);
 
-    char *filename = Shell_GetScreenshotName(filename);
+    char *filename = Shell_GetScreenshotName();
 
     const char *ext;
     switch (g_Config.screenshot_format) {

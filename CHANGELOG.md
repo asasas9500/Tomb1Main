@@ -1,5 +1,33 @@
-## [Unreleased](https://github.com/rr-/Tomb1Main/compare/2.6.4...master)
-- ...
+## [Unreleased](https://github.com/rr-/Tomb1Main/compare/2.7...master)
+- added the option to pause sound in the inventory screen (#309)
+- added the ability to pick up multiple items at once with walk to items enabled (#505)
+- added the ability to skip pictures during fade animation (#510)
+- added a cheat to increase the game speed (#135)
+- added a matrix stack overflow error check and message if GetRoomBounds runs infinitely (#506)
+- added ability to turn off trex collision (#437)
+- fixed ghost margins during fade animation on HiDPI screens (#438)
+- fixed music rolling over to the main menu if main menu music disabled (#490)
+- fixed Unfinished Business gameflow not using basic / detailed stats strings (#497, regression from 2.7)
+- fixed picking up multiple underwater pickups with walk to items enabled (#500)
+- fixed incorrect Lara health when restarting a level
+- fixed pushables breaking with flipped rooms when loading a save (#496, regression from 2.6)
+- fixed pictures displayed before starting a level causing a black screen (custom levels only)
+- fixed underwater caustics animating at 2x speed (#109)
+
+## [2.7](https://github.com/rr-/Tomb1Main/compare/2.6.4...2.7) - 2022-03-16
+- added ability to automatically walk to pickups when nearby (#18)
+- added ability to automatically walk to switches when nearby (#222)
+- added ability to turn off detailed end of the level stats (#447)
+- added contextual arrows to passport navigation (#420)
+- added contextual arrows to sound option navigation (#459)
+- added contextual arrows to controls option navigation (#461)
+- added contextual arrows to graphics option navigation (#462)
+- added a final statistics screen (#385)
+- added music during the credits (#356)
+- added fade effects to displayed images (#476)
+- added unobtainable pickups and kills stats support in the gameflow (#470)
+- fixed exploded mutant pods sometimes appearing unhatched on reload (#423)
+- fixed sound effects playing rapidly in sound menu if input held down (#467)
 
 ## [2.6.4](https://github.com/rr-/Tomb1Main/compare/2.6.3...2.6.4) - 2022-02-20
 - fixed crash when loading a legacy save and saving on a new slot (#442, regression from 2.6)

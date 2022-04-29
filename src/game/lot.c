@@ -10,7 +10,7 @@
 static int32_t m_SlotsUsed = 0;
 static CREATURE_INFO *m_BaddieSlots = NULL;
 
-void InitialiseLOTArray()
+void InitialiseLOTArray(void)
 {
     m_BaddieSlots =
         GameBuf_Alloc(NUM_SLOTS * sizeof(CREATURE_INFO), GBUF_CREATURE_INFO);
@@ -110,7 +110,7 @@ void InitialiseSlot(int16_t item_num, int32_t slot)
         creature->LOT.fly = STEP_L / 16;
         break;
 
-    case O_DINOSAUR:
+    case O_TREX:
     case O_WARRIOR1:
     case O_CENTAUR:
         creature->LOT.block_mask = BLOCKABLE;

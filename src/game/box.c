@@ -7,6 +7,7 @@
 #include "game/items.h"
 #include "game/lot.h"
 #include "game/random.h"
+#include "game/room.h"
 #include "game/sphere.h"
 #include "global/const.h"
 #include "global/vars.h"
@@ -382,7 +383,7 @@ void CreatureMood(ITEM_INFO *item, AI_INFO *info, int32_t violent)
             LOT->target.y = g_LaraItem->pos.y;
             LOT->target.z = g_LaraItem->pos.z;
             LOT->required_box = g_LaraItem->box_number;
-            if (LOT->fly && g_Lara.water_status == LWS_ABOVEWATER) {
+            if (LOT->fly && g_Lara.water_status == LWS_ABOVE_WATER) {
                 int16_t *bounds = GetBestFrame(g_LaraItem);
                 LOT->target.y += bounds[FRAME_BOUND_MIN_Y];
             }
@@ -701,7 +702,7 @@ int32_t BadFloor(
     int32_t x, int32_t y, int32_t z, int16_t box_height, int16_t next_height,
     int16_t room_number, LOT_INFO *LOT)
 {
-    FLOOR_INFO *floor = GetFloor(x, y, z, &room_number);
+    FLOOR_INFO *floor = Room_GetFloor(x, y, z, &room_number);
     if (floor->box == NO_BOX) {
         return 1;
     }
@@ -764,7 +765,7 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
     int32_t y = item->pos.y + bounds[FRAME_BOUND_MIN_Y];
 
     int16_t room_num = item->room_number;
-    FLOOR_INFO *floor = GetFloor(item->pos.x, y, item->pos.z, &room_num);
+    FLOOR_INFO *floor = Room_GetFloor(item->pos.x, y, item->pos.z, &room_num);
     int32_t height = g_Boxes[floor->box].height;
     int16_t next_box = LOT->node[floor->box].exit_box;
     int32_t next_height;
@@ -797,7 +798,7 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
             item->pos.z = old.z | (WALL_L - 1);
         }
 
-        floor = GetFloor(item->pos.x, y, item->pos.z, &room_num);
+        floor = Room_GetFloor(item->pos.x, y, item->pos.z, &room_num);
         height = g_Boxes[floor->box].height;
         next_box = LOT->node[floor->box].exit_box;
         if (next_box != NO_BOX) {
@@ -903,7 +904,7 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
     item->pos.z += shift_z;
 
     if (shift_x || shift_z) {
-        floor = GetFloor(item->pos.x, y, item->pos.z, &room_num);
+        floor = Room_GetFloor(item->pos.x, y, item->pos.z, &room_num);
 
         item->pos.y_rot += angle;
         CreatureTilt(item, tilt * 2);
@@ -924,7 +925,7 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
             dy = -LOT->fly;
         }
 
-        height = GetHeight(floor, item->pos.x, y, item->pos.z);
+        height = Room_GetHeight(floor, item->pos.x, y, item->pos.z);
         if (item->pos.y + dy > height) {
             if (item->pos.y > height) {
                 item->pos.x = old.x;
@@ -935,7 +936,8 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
                 item->pos.y = height;
             }
         } else {
-            int32_t ceiling = GetCeiling(floor, item->pos.x, y, item->pos.z);
+            int32_t ceiling =
+                Room_GetCeiling(floor, item->pos.x, y, item->pos.z);
 
             if (item->object_number == O_ALLIGATOR) {
                 bounds[FRAME_BOUND_MIN_Y] = 0;
@@ -953,8 +955,8 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
         }
 
         item->pos.y += dy;
-        floor = GetFloor(item->pos.x, y, item->pos.z, &room_num);
-        item->floor = GetHeight(floor, item->pos.x, y, item->pos.z);
+        floor = Room_GetFloor(item->pos.x, y, item->pos.z, &room_num);
+        item->floor = Room_GetHeight(floor, item->pos.x, y, item->pos.z);
 
         angle = item->speed ? phd_atan(item->speed, -dy) : 0;
         if (angle < item->pos.x_rot - PHD_DEGREE) {
@@ -975,8 +977,9 @@ int32_t CreatureAnimation(int16_t item_num, int16_t angle, int16_t tilt)
 
         item->pos.x_rot = 0;
 
-        floor = GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
-        item->floor = GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
+        floor = Room_GetFloor(item->pos.x, item->pos.y, item->pos.z, &room_num);
+        item->floor =
+            Room_GetHeight(floor, item->pos.x, item->pos.y, item->pos.z);
     }
 
     if (item->room_number != room_num) {
@@ -1055,7 +1058,7 @@ void CreatureHead(ITEM_INFO *item, int16_t required)
 
 int16_t CreatureEffect(
     ITEM_INFO *item, BITE_INFO *bite,
-    int16_t (*generate)(
+    int16_t (*spawn)(
         int32_t x, int32_t y, int32_t z, int16_t speed, int16_t yrot,
         int16_t room_num))
 {
@@ -1064,6 +1067,6 @@ int16_t CreatureEffect(
     pos.y = bite->y;
     pos.z = bite->z;
     GetJointAbsPosition(item, &pos, bite->mesh_num);
-    return generate(
+    return spawn(
         pos.x, pos.y, pos.z, item->speed, item->pos.y_rot, item->room_number);
 }

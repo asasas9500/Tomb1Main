@@ -31,7 +31,7 @@ typedef enum GAME_OBJECT_ID {
     O_MAGNUM = 3,
     O_UZI = 4,
     O_LARA_EXTRA = 5,
-    O_EVIL_LARA = 6,
+    O_BACON_LARA = 6,
     O_WOLF = 7,
     O_BEAR = 8,
     O_BAT = 9,
@@ -43,7 +43,7 @@ typedef enum GAME_OBJECT_ID {
     O_APE = 15,
     O_RAT = 16,
     O_VOLE = 17,
-    O_DINOSAUR = 18,
+    O_TREX = 18,
     O_RAPTOR = 19,
     O_WARRIOR1 = 20, // flying mutant
     O_WARRIOR2 = 21,
@@ -59,7 +59,7 @@ typedef enum GAME_OBJECT_ID {
     O_COWBOY = 31,
     O_BALDY = 32,
     O_NATLA = 33,
-    O_ABORTION = 34, // a.k.a. Adam, Torso or Evil Natla
+    O_TORSO = 34, // a.k.a. Abortion, Adam or Evil Natla
     O_FALLING_BLOCK = 35,
     O_PENDULUM = 36,
     O_SPIKES = 37,
@@ -402,13 +402,13 @@ typedef enum SOUND_EFFECT_ID {
     SFX_SKATEBOARD_START = 133,
     SFX_SKATEBOARD_DEATH = 134,
     SFX_SKATEBOARD_HIT_GROUND = 135,
-    SFX_ABORTION_HIT_GROUND = 136,
-    SFX_ABORTION_ATTACK1 = 137,
-    SFX_ABORTION_ATTACK2 = 138,
-    SFX_ABORTION_DEATH = 139,
-    SFX_ABORTION_ARM_SWING = 140,
-    SFX_ABORTION_MOVE = 141,
-    SFX_ABORTION_HIT = 142,
+    SFX_TORSO_HIT_GROUND = 136,
+    SFX_TORSO_ATTACK1 = 137,
+    SFX_TORSO_ATTACK2 = 138,
+    SFX_TORSO_DEATH = 139,
+    SFX_TORSO_ARM_SWING = 140,
+    SFX_TORSO_MOVE = 141,
+    SFX_TORSO_HIT = 142,
     SFX_CENTAUR_FEET = 143,
     SFX_CENTAUR_ROAR = 144,
     SFX_LARA_SPIKE_DEATH = 145,
@@ -578,7 +578,7 @@ typedef enum LARA_ANIMATION_FRAME {
     AF_SPIKE_DEATH = 3887,
     AF_GRABLEDGEIN = 3974,
     AF_PPREADY = 2091,
-    AF_PICKUP = 3443,
+    AF_PICKUP_ERASE = 3443,
     AF_PICKUP_UW = 2970,
     AF_PICKUPSCION = 44,
     AF_USEPUZZLE = 3372,
@@ -604,119 +604,131 @@ typedef enum LARA_GUN_ANIMATION_FRAME {
 } LARA_GUN_ANIMATION_FRAME;
 
 typedef enum LARA_ANIMATION {
-    AA_VAULT12 = 50,
-    AA_VAULT34 = 42,
-    AA_FASTFALL = 32,
-    AA_STOP = 11,
-    AA_FALLDOWN = 34,
-    AA_STOP_LEFT = 2,
-    AA_STOP_RIGHT = 3,
-    AA_HITWALLLEFT = 53,
-    AA_HITWALLRIGHT = 54,
-    AA_RUNSTEPUP_LEFT = 56,
-    AA_RUNSTEPUP_RIGHT = 55,
-    AA_WALKSTEPUP_LEFT = 57,
-    AA_WALKSTEPUP_RIGHT = 58,
-    AA_WALKSTEPD_LEFT = 60,
-    AA_WALKSTEPD_RIGHT = 59,
-    AA_BACKSTEPD_LEFT = 61,
-    AA_BACKSTEPD_RIGHT = 62,
-    AA_LANDFAR = 24,
-    AA_GRABLEDGE = 96,
-    AA_GRABLEDGE_OLD = 32,
-    AA_SWIMGLIDE = 87,
-    AA_FALLBACK = 93,
-    AA_HANG = 96,
-    AA_HANG_OLD = 33,
-    AA_STARTHANG = 96,
-    AA_STARTHANG_OLD = 33,
-    AA_STOPHANG = 28,
-    AA_SLIDE = 70,
-    AA_SLIDEBACK = 104,
-    AA_TREAD = 108,
-    AA_SURFTREAD = 114,
-    AA_SURFDIVE = 119,
-    AA_SURFCLIMB = 111,
-    AA_JUMPIN = 112,
-    AA_ROLL = 146,
-    AA_RBALL_DEATH = 139,
-    AA_SPIKE_DEATH = 149,
-    AA_GRABLEDGEIN = 150,
-    AA_SPAZ_FORWARD = 125,
-    AA_SPAZ_BACK = 126,
-    AA_SPAZ_RIGHT = 127,
-    AA_SPAZ_LEFT = 128,
+    LA_RUN = 0,
+    LA_WALK_FORWARD = 1,
+    LA_WALK_BACK = 40,
+    LA_VAULT_12 = 50,
+    LA_VAULT_34 = 42,
+    LA_FAST_FALL = 32,
+    LA_STOP = 11,
+    LA_FALL_DOWN = 34,
+    LA_STOP_LEFT = 2,
+    LA_STOP_RIGHT = 3,
+    LA_HIT_WALL_LEFT = 53,
+    LA_HIT_WALL_RIGHT = 54,
+    LA_RUN_STEP_UP_LEFT = 56,
+    LA_RUN_STEP_UP_RIGHT = 55,
+    LA_WALK_STEP_UP_LEFT = 57,
+    LA_WALK_STEP_UP_RIGHT = 58,
+    LA_WALK_STEP_DOWN_LEFT = 60,
+    LA_WALK_STEP_DOWN_RIGHT = 59,
+    LA_BACK_STEP_DOWN_LEFT = 61,
+    LA_BACK_STEP_DOWN_RIGHT = 62,
+    LA_WALL_SWITCH_DOWN = 63,
+    LA_WALL_SWITCH_UP = 64,
+    LA_SIDE_STEP_LEFT = 65,
+    LA_SIDE_STEP_LEFT_END = 66,
+    LA_SIDE_STEP_RIGHT = 67,
+    LA_SIDE_STEP_RIGHT_END = 68,
+    LA_LAND_FAR = 24,
+    LA_GRAB_LEDGE = 96,
+    LA_GRAB_LEDGE_OLD = 32,
+    LA_SWIM_GLIDE = 87,
+    LA_FALL_BACK = 93,
+    LA_HANG = 96,
+    LA_HANG_OLD = 33,
+    LA_START_HANG = 96,
+    LA_START_HANG_OLD = 33,
+    LA_STOP_HANG = 28,
+    LA_SLIDE = 70,
+    LA_SLIDE_BACK = 104,
+    LA_TREAD = 108,
+    LA_SURF_TREAD = 114,
+    LA_SURF_DIVE = 119,
+    LA_SURF_CLIMB = 111,
+    LA_JUMP_IN = 112,
+    LA_ROLL = 146,
+    LA_PICKUP_UW = 130,
+    LA_PICKUP = 135,
+    LA_ROLLING_BALL_DEATH = 139,
+    LA_SPIKE_DEATH = 149,
+    LA_GRAB_LEDGE_IN = 150,
+    LA_SPAZ_FORWARD = 125,
+    LA_SPAZ_BACK = 126,
+    LA_SPAZ_RIGHT = 127,
+    LA_SPAZ_LEFT = 128,
 } LARA_ANIMATION;
 
 typedef enum LARA_WATER_STATUS {
-    LWS_ABOVEWATER = 0,
+    LWS_ABOVE_WATER = 0,
     LWS_UNDERWATER = 1,
     LWS_SURFACE = 2,
     LWS_CHEAT = 3,
 } LARA_WATER_STATUS;
 
 typedef enum LARA_STATE {
-    AS_WALK = 0,
-    AS_RUN = 1,
-    AS_STOP = 2,
-    AS_FORWARDJUMP = 3,
-    AS_POSE = 4,
-    AS_FASTBACK = 5,
-    AS_TURN_R = 6,
-    AS_TURN_L = 7,
-    AS_DEATH = 8,
-    AS_FASTFALL = 9,
-    AS_HANG = 10,
-    AS_REACH = 11,
-    AS_SPLAT = 12,
-    AS_TREAD = 13,
-    AS_LAND = 14,
-    AS_COMPRESS = 15,
-    AS_BACK = 16,
-    AS_SWIM = 17,
-    AS_GLIDE = 18,
-    AS_NULL = 19,
-    AS_FASTTURN = 20,
-    AS_STEPRIGHT = 21,
-    AS_STEPLEFT = 22,
-    AS_HIT = 23,
-    AS_SLIDE = 24,
-    AS_BACKJUMP = 25,
-    AS_RIGHTJUMP = 26,
-    AS_LEFTJUMP = 27,
-    AS_UPJUMP = 28,
-    AS_FALLBACK = 29,
-    AS_HANGLEFT = 30,
-    AS_HANGRIGHT = 31,
-    AS_SLIDEBACK = 32,
-    AS_SURFTREAD = 33,
-    AS_SURFSWIM = 34,
-    AS_DIVE = 35,
-    AS_PUSHBLOCK = 36,
-    AS_PULLBLOCK = 37,
-    AS_PPREADY = 38,
-    AS_PICKUP = 39,
-    AS_SWITCHON = 40,
-    AS_SWITCHOFF = 41,
-    AS_USEKEY = 42,
-    AS_USEPUZZLE = 43,
-    AS_UWDEATH = 44,
-    AS_ROLL = 45,
-    AS_SPECIAL = 46,
-    AS_SURFBACK = 47,
-    AS_SURFLEFT = 48,
-    AS_SURFRIGHT = 49,
-    AS_USEMIDAS = 50,
-    AS_DIEMIDAS = 51,
-    AS_SWANDIVE = 52,
-    AS_FASTDIVE = 53,
-    AS_GYMNAST = 54,
-    AS_WATEROUT = 55,
+    LS_WALK = 0,
+    LS_RUN = 1,
+    LS_STOP = 2,
+    LS_JUMP_FORWARD = 3,
+    LS_POSE = 4,
+    LS_FAST_BACK = 5,
+    LS_TURN_R = 6,
+    LS_TURN_L = 7,
+    LS_DEATH = 8,
+    LS_FAST_FALL = 9,
+    LS_HANG = 10,
+    LS_REACH = 11,
+    LS_SPLAT = 12,
+    LS_TREAD = 13,
+    LS_LAND = 14,
+    LS_COMPRESS = 15,
+    LS_BACK = 16,
+    LS_SWIM = 17,
+    LS_GLIDE = 18,
+    LS_NULL = 19,
+    LS_FAST_TURN = 20,
+    LS_STEP_RIGHT = 21,
+    LS_STEP_LEFT = 22,
+    LS_HIT = 23,
+    LS_SLIDE = 24,
+    LS_JUMP_BACK = 25,
+    LS_JUMP_RIGHT = 26,
+    LS_JUMP_LEFT = 27,
+    LS_JUMP_UP = 28,
+    LS_FALL_BACK = 29,
+    LS_HANG_LEFT = 30,
+    LS_HANG_RIGHT = 31,
+    LS_SLIDE_BACK = 32,
+    LS_SURF_TREAD = 33,
+    LS_SURF_SWIM = 34,
+    LS_DIVE = 35,
+    LS_PUSH_BLOCK = 36,
+    LS_PULL_BLOCK = 37,
+    LS_PP_READY = 38,
+    LS_PICKUP = 39,
+    LS_SWITCH_ON = 40,
+    LS_SWITCH_OFF = 41,
+    LS_USE_KEY = 42,
+    LS_USE_PUZZLE = 43,
+    LS_UW_DEATH = 44,
+    LS_ROLL = 45,
+    LS_SPECIAL = 46,
+    LS_SURF_BACK = 47,
+    LS_SURF_LEFT = 48,
+    LS_SURF_RIGHT = 49,
+    LS_USE_MIDAS = 50,
+    LS_DIE_MIDAS = 51,
+    LS_SWAN_DIVE = 52,
+    LS_FAST_DIVE = 53,
+    LS_GYMNAST = 54,
+    LS_WATER_OUT = 55,
+    LS_CONTROLLED = 56,
 } LARA_STATE;
 
 typedef enum LARA_GUN_STATE {
     LGS_ARMLESS = 0,
-    LGS_HANDSBUSY = 1,
+    LGS_HANDS_BUSY = 1,
     LGS_DRAW = 2,
     LGS_UNDRAW = 3,
     LGS_READY = 4,
@@ -964,6 +976,8 @@ typedef enum GAMEFLOW_LEVEL_TYPE {
     GFL_CUTSCENE = 4,
     GFL_GYM = 5,
     GFL_CURRENT = 6, // legacy level type for reading TombATI's savegames
+    GFL_RESTART = 7,
+    GFL_SELECT = 8,
 } GAMEFLOW_LEVEL_TYPE;
 
 typedef enum GAMEFLOW_OPTION {
@@ -977,6 +991,7 @@ typedef enum GAMEFLOW_OPTION {
     GF_LEVEL_COMPLETE = 5 << 6,
     GF_EXIT_GAME = 6 << 6,
     GF_START_SAVED_GAME = 7 << 6,
+    GF_RESTART_GAME = 8 << 6,
 } GAMEFLOW_OPTION;
 
 typedef enum GAMEFLOW_SEQUENCE_TYPE {
@@ -989,6 +1004,7 @@ typedef enum GAMEFLOW_SEQUENCE_TYPE {
     GFS_STOP_CINE,
     GFS_PLAY_FMV,
     GFS_LEVEL_STATS,
+    GFS_TOTAL_STATS,
     GFS_DISPLAY_PICTURE,
     GFS_EXIT_TO_TITLE,
     GFS_EXIT_TO_LEVEL,
@@ -1013,6 +1029,7 @@ typedef enum GAME_STRING_ID {
     GS_HEADING_ITEMS,
 
     GS_PASSPORT_SELECT_LEVEL,
+    GS_PASSPORT_LOCKED_LEVEL,
     GS_PASSPORT_RESTART_LEVEL,
     GS_PASSPORT_SELECT_MODE,
     GS_PASSPORT_MODE_NEW_GAME,
@@ -1029,13 +1046,15 @@ typedef enum GAME_STRING_ID {
     GS_DETAIL_LEVEL_HIGH,
     GS_DETAIL_LEVEL_MEDIUM,
     GS_DETAIL_LEVEL_LOW,
-    GS_DETAIL_PERSPECTIVE_FMT,
-    GS_DETAIL_BILINEAR_FMT,
-    GS_DETAIL_VSYNC_FMT,
-    GS_DETAIL_BRIGHTNESS_FMT,
-    GS_DETAIL_UI_TEXT_SCALE_FMT,
-    GS_DETAIL_UI_BAR_SCALE_FMT,
-    GS_DETAIL_VIDEO_MODE_FMT,
+    GS_DETAIL_PERSPECTIVE,
+    GS_DETAIL_BILINEAR,
+    GS_DETAIL_VSYNC,
+    GS_DETAIL_BRIGHTNESS,
+    GS_DETAIL_UI_TEXT_SCALE,
+    GS_DETAIL_UI_BAR_SCALE,
+    GS_DETAIL_RESOLUTION,
+    GS_DETAIL_FLOAT_FMT,
+    GS_DETAIL_RESOLUTION_FMT,
 
     GS_SOUND_SET_VOLUMES,
 
@@ -1058,6 +1077,7 @@ typedef enum GAME_STRING_ID {
     GS_KEYMAP_FLY_CHEAT,
     GS_KEYMAP_ITEM_CHEAT,
     GS_KEYMAP_LEVEL_SKIP_CHEAT,
+    GS_KEYMAP_TURBO_CHEAT,
     GS_KEYMAP_PAUSE,
     GS_KEYMAP_CAMERA_UP,
     GS_KEYMAP_CAMERA_DOWN,
@@ -1065,11 +1085,14 @@ typedef enum GAME_STRING_ID {
     GS_KEYMAP_CAMERA_RIGHT,
     GS_KEYMAP_CAMERA_RESET,
 
-    GS_STATS_KILLS_FMT,
-    GS_STATS_PICKUPS_FMT,
+    GS_STATS_KILLS_DETAIL_FMT,
+    GS_STATS_KILLS_BASIC_FMT,
+    GS_STATS_PICKUPS_DETAIL_FMT,
+    GS_STATS_PICKUPS_BASIC_FMT,
     GS_STATS_SECRETS_FMT,
     GS_STATS_DEATHS_FMT,
     GS_STATS_TIME_TAKEN_FMT,
+    GS_STATS_FINAL_STATISTICS,
 
     GS_PAUSE_PAUSED,
     GS_PAUSE_EXIT_TO_TITLE,
@@ -1140,6 +1163,28 @@ typedef enum GAME_BONUS_FLAG {
     GBF_NGPLUS = 1 << 0,
     GBF_JAPANESE = 1 << 1,
 } GAME_BONUS_FLAG;
+
+typedef enum PASSPORT_PAGE {
+    PASSPORT_PAGE_FLIPPING = -1,
+    PASSPORT_PAGE_1 = 0,
+    PASSPORT_PAGE_2 = 1,
+    PASSPORT_PAGE_3 = 2,
+    PASSPORT_PAGE_COUNT = 3,
+} PASSPORT_PAGE;
+
+typedef enum PASSPORT_MODE {
+    PASSPORT_MODE_FLIP = 0,
+    PASSPORT_MODE_SHOW_SAVES = 1,
+    PASSPORT_MODE_NEW_GAME = 2,
+    PASSPORT_MODE_SELECT_LEVEL = 3,
+} PASSPORT_MODE;
+
+typedef enum INVENTORY_EXTRA_DATA {
+    IED_PAGE_NUM = 0,
+    IED_SAVEGAME_NUM = 1,
+    IED_PASSPORT_MODE = 2,
+    IED_LEVEL_NUM = 3,
+} INVENTORY_EXTRA_DATA;
 
 #pragma pack(push, 1)
 
@@ -1448,6 +1493,11 @@ typedef struct LARA_INFO {
     AMMO_INFO uzis;
     AMMO_INFO shotgun;
     LOT_INFO LOT;
+    struct {
+        int32_t item_num;
+        int32_t move_count;
+        bool is_moving;
+    } interact_target;
 } LARA_INFO;
 
 typedef struct GAME_STATS {
@@ -1461,7 +1511,7 @@ typedef struct GAME_STATS {
     uint8_t max_pickup_count;
 } GAME_STATS;
 
-typedef struct START_INFO {
+typedef struct RESUME_INFO {
     int32_t lara_hitpoints;
     uint16_t pistol_ammo;
     uint16_t magnum_ammo;
@@ -1483,19 +1533,16 @@ typedef struct START_INFO {
             uint16_t costume : 1;
         };
     } flags;
-} START_INFO;
-
-typedef struct END_INFO {
     GAME_STATS stats;
-} END_INFO;
+} RESUME_INFO;
 
 typedef struct GAME_INFO {
-    START_INFO *start;
-    END_INFO *end;
-    GAME_STATS stats; // always for current level
+    RESUME_INFO *start;
+    RESUME_INFO *current;
     uint8_t bonus_flag;
     int32_t current_save_slot;
     bool death_counter_supported;
+    GAMEFLOW_LEVEL_TYPE current_level_type;
 } GAME_INFO;
 
 typedef struct CREATURE_INFO {
@@ -1522,6 +1569,7 @@ typedef struct TEXTSTRING {
             uint32_t bottom : 1;
             uint32_t background : 1;
             uint32_t outline : 1;
+            uint32_t hide : 1;
         };
     } flags;
     struct {
@@ -1912,6 +1960,7 @@ typedef union INPUT_STATE {
         uint32_t fly_cheat : 1;
         uint32_t item_cheat : 1;
         uint32_t level_skip_cheat : 1;
+        uint32_t turbo_cheat : 1;
         uint32_t health_cheat : 1;
         uint32_t camera_up : 1;
         uint32_t camera_down : 1;
@@ -1938,13 +1987,14 @@ typedef enum INPUT_KEY {
     INPUT_KEY_FLY_CHEAT = 13,
     INPUT_KEY_ITEM_CHEAT = 14,
     INPUT_KEY_LEVEL_SKIP_CHEAT = 15,
-    INPUT_KEY_PAUSE = 16,
-    INPUT_KEY_CAMERA_UP = 17,
-    INPUT_KEY_CAMERA_DOWN = 18,
-    INPUT_KEY_CAMERA_LEFT = 19,
-    INPUT_KEY_CAMERA_RIGHT = 20,
-    INPUT_KEY_CAMERA_RESET = 21,
-    INPUT_KEY_NUMBER_OF = 22,
+    INPUT_KEY_TURBO_CHEAT = 16,
+    INPUT_KEY_PAUSE = 17,
+    INPUT_KEY_CAMERA_UP = 18,
+    INPUT_KEY_CAMERA_DOWN = 19,
+    INPUT_KEY_CAMERA_LEFT = 20,
+    INPUT_KEY_CAMERA_RIGHT = 21,
+    INPUT_KEY_CAMERA_RESET = 22,
+    INPUT_KEY_NUMBER_OF = 23,
 } INPUT_KEY;
 
 typedef enum INPUT_LAYOUT {

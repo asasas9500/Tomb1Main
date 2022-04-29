@@ -1,15 +1,15 @@
 #include "game/game.h"
 
-#include "game/inv.h"
-#include "game/settings.h"
 #include "config.h"
 #include "game/camera.h"
 #include "game/control.h"
 #include "game/draw.h"
 #include "game/gameflow.h"
 #include "game/input.h"
+#include "game/inv.h"
 #include "game/music.h"
 #include "game/savegame.h"
+#include "game/settings.h"
 #include "game/setup.h"
 #include "game/shell.h"
 #include "game/sound.h"
@@ -24,6 +24,7 @@
 bool StartGame(int32_t level_num, GAMEFLOW_LEVEL_TYPE level_type)
 {
     g_CurrentLevel = level_num;
+    g_GameInfo.current_level_type = level_type;
     if (level_type == GFL_SAVED) {
         // reset start info to the defaults so that we do not do
         // GlobalItemReplace in the inventory initialization routines too early
@@ -51,14 +52,15 @@ bool StartGame(int32_t level_num, GAMEFLOW_LEVEL_TYPE level_type)
     return true;
 }
 
-int32_t StopGame()
+int32_t StopGame(void)
 {
-    Savegame_PersistGameToEndInfo(g_CurrentLevel);
+    Savegame_PersistGameToCurrentInfo(g_CurrentLevel);
 
     if (g_CurrentLevel == g_GameFlow.last_level_num) {
         g_GameInfo.bonus_flag = GBF_NGPLUS;
     } else {
-        Savegame_PersistGameToStartInfo(g_CurrentLevel + 1);
+        Savegame_CarryCurrentInfoToStartInfo(
+            g_CurrentLevel, g_CurrentLevel + 1);
         Savegame_ApplyLogicToStartInfo(g_CurrentLevel + 1);
     }
 
@@ -72,9 +74,15 @@ int32_t StopGame()
         return GF_EXIT_TO_TITLE;
     }
 
-    if (g_InvExtraData[0] == 0) {
-        return GF_START_SAVED_GAME | g_InvExtraData[1];
-    } else if (g_InvExtraData[0] == 1) {
+    if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1) {
+        return GF_START_SAVED_GAME | g_InvExtraData[IED_SAVEGAME_NUM];
+    } else if (
+        g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_1
+        && g_InvExtraData[IED_PASSPORT_MODE] == PASSPORT_MODE_SELECT_LEVEL) {
+        // TODO Placeholder for select level. Do new game.
+        Savegame_InitStartCurrentInfo();
+        return GF_START_GAME | g_InvExtraData[IED_LEVEL_NUM];
+    } else if (g_InvExtraData[IED_PAGE_NUM] == PASSPORT_PAGE_2) {
         return GF_START_GAME
             | (g_InvMode == INV_DEATH_MODE ? g_CurrentLevel
                                            : g_GameFlow.first_level_num);
@@ -86,12 +94,15 @@ int32_t StopGame()
 int32_t GameLoop(GAMEFLOW_LEVEL_TYPE level_type)
 {
     g_OverlayFlag = 1;
-    InitialiseCamera();
+    Camera_Initialise();
 
     Stats_CalculateStats();
-    g_GameInfo.stats.max_pickup_count = Stats_GetPickups();
-    g_GameInfo.stats.max_kill_count = Stats_GetKillables();
-    g_GameInfo.stats.max_secret_count = Stats_GetSecrets();
+    g_GameInfo.current[g_CurrentLevel].stats.max_pickup_count =
+        Stats_GetPickups();
+    g_GameInfo.current[g_CurrentLevel].stats.max_kill_count =
+        Stats_GetKillables();
+    g_GameInfo.current[g_CurrentLevel].stats.max_secret_count =
+        Stats_GetSecrets();
 
     bool ask_for_save = g_GameFlow.enable_save_crystals
         && level_type == GFL_NORMAL
@@ -110,7 +121,7 @@ int32_t GameLoop(GAMEFLOW_LEVEL_TYPE level_type)
         if (ask_for_save) {
             int32_t return_val = Display_Inventory(INV_SAVE_CRYSTAL_MODE);
             if (return_val != GF_NOP) {
-                Savegame_Save(g_InvExtraData[1], &g_GameInfo);
+                Savegame_Save(g_InvExtraData[IED_SAVEGAME_NUM], &g_GameInfo);
                 Settings_Write();
             }
             ask_for_save = false;

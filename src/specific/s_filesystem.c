@@ -2,8 +2,8 @@
 
 #include "log.h"
 
-#include <assert.h>
 #include <SDL2/SDL.h>
+#include <assert.h>
 #include <string.h>
 
 #if defined(_WIN32)
@@ -15,7 +15,7 @@
 
 const char *m_GameDir = NULL;
 
-const char *S_File_GetGameDirectory()
+const char *S_File_GetGameDirectory(void)
 {
     if (!m_GameDir) {
         m_GameDir = SDL_GetBasePath();
